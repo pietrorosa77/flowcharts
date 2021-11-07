@@ -22,7 +22,7 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.stories.tsx",
-    "./src/index.tsx",
+    "./src/Index.tsx",
     "./src/setupTests.ts"
   ]
 }
