@@ -1,6 +1,6 @@
 {
   "name": "@pietrorosa77/flowchart",
-  "version": "0.7.7",
+  "version": "0.1.0",
   "description": "build flowcharts with React and Grommet",
   "license": "MIT",
   "main": "lib/Index.js",
@@ -8,8 +8,12 @@
   "scripts": {
     "start": "vite",
     "lint": "eslint .",
+    "test": "echo \"Error: no test specified\" && exit 0",
     "typecheck": "tsc --noEmit",
-    "typewatch": "tsc --noEmit --watch"
+    "typewatch": "tsc --noEmit --watch",
+    "prebuild": "npm run clean",
+    "clean": "rm -rf ./lib",
+    "build": "tsc --build \"./libBuildTsconfig.json\""
   },
   "dependencies": {
     "use-resize-observer": "^8.0.0",
