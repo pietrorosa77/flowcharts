@@ -6,13 +6,13 @@ import { nanoid } from "nanoid";
 import { getNodeRenderer } from "../utils";
 import { Box, Text } from "grommet";
 
-const ContentEditor = MDEditor as any;
+const ContentEditor = MDEditor;
 interface IMarkdownEditorProps {
   value: string;
   label: string;
   plugins?: string[];
   style?: React.CSSProperties;
-  onEditorLoaded?: (editor: MDEditor) => void;
+  onEditorLoaded?: (editor: any) => void;
   onContentChange: (evt: { content: string }) => void;
   renderNode?: (node: INode) => JSX.Element;
   name?: string;
@@ -64,21 +64,23 @@ export function MarkdownEditor(props: IMarkdownEditorProps) {
         onImageUpload={onImageUpload}
         value={props.value}
         name={props.name}
-        plugins={[
-          "header",
-          "font-bold",
-          "font-italic",
-          "font-underline",
-          "list-ordered",
-          "block-quote",
-          "block-wrap",
-          "block-code-inline",
-          "table",
-          "image",
-          "link",
-          "mode-toggle",
-          "full-screen",
-        ]}
+        plugins={
+          props.plugins || [
+            "header",
+            "font-bold",
+            "font-italic",
+            "font-underline",
+            "list-ordered",
+            "block-quote",
+            "block-wrap",
+            "block-code-inline",
+            "table",
+            "image",
+            "link",
+            "mode-toggle",
+            "full-screen",
+          ]
+        }
         markdownClass="md-editor-textarea"
         renderHTML={(content: string) =>
           getNodeRenderer({ ...node, content }, props.renderNode)
