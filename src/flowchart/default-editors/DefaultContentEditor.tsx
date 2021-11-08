@@ -15,6 +15,10 @@ interface IMarkdownEditorProps {
   onEditorLoaded?: (editor: MDEditor) => void;
   onContentChange: (evt: { content: string }) => void;
   renderNode?: (node: INode) => JSX.Element;
+  name?: string;
+  customProps?: {
+    [key: string]: any;
+  };
 }
 
 export function MarkdownEditor(props: IMarkdownEditorProps) {
@@ -59,6 +63,7 @@ export function MarkdownEditor(props: IMarkdownEditorProps) {
         style={props.style}
         onImageUpload={onImageUpload}
         value={props.value}
+        name={props.name}
         plugins={[
           "header",
           "font-bold",
@@ -84,6 +89,7 @@ export function MarkdownEditor(props: IMarkdownEditorProps) {
         onChange={(data: { text: string }) =>
           props.onContentChange({ content: data.text })
         }
+        {...(props.customProps || {})}
       />
     </Box>
   );
