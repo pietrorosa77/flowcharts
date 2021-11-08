@@ -51,29 +51,29 @@ export default function DefaultPropertyPanelEditor(props: INodePanelEditor) {
   return (
     <Box pad="none" gap="small">
       <Box pad="xsmall">
-        <Text size="small">Node title</Text>
+        <Text size="small">Title</Text>
       </Box>
       <TextInput
-        placeholder="set node title"
+        placeholder="title"
         value={node.title}
         onChange={onTitleChange}
       />
       <MarkdownEditor
         value={node.content}
         onContentChange={onContentChange}
-        label="Edit node content"
+        label="Content"
         renderNode={props.renderNode}
       />
       <PortsEditor
         ports={node.ports}
-        label="Edit node ports"
+        label="Ports"
         onChange={onChangePorts}
         renderPort={props.renderPort}
         portPropertiesValidator={props.portPropertiesValidator}
       />
 
       <Box pad="xsmall">
-        <Text size="small">Node properties</Text>
+        <Text size="small">Properties</Text>
       </Box>
       <ReactJsonView
         theme={theme.jsonEditor.theme}
@@ -81,7 +81,7 @@ export default function DefaultPropertyPanelEditor(props: INodePanelEditor) {
         name="properties"
         collapseStringsAfterLength={20}
         src={node.properties || {}}
-        onAdd={onEditProperties}
+        // onAdd={onEditProperties}
         onEdit={onEditProperties}
         onDelete={onEditProperties}
         enableClipboard={false}

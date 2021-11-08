@@ -83,18 +83,18 @@ interface IPortContentProps {
 
 function PortContent(props: IPortContentProps) {
   const port = props.port;
-  let portContent;
-  if (!props.renderPort) {
-    portContent = (
-      <PortContentBox responsive={false} round="4px" background={port.bgColor}>
+
+  const portContent = (
+    <PortContentBox responsive={false} round="4px" background={port.bgColor}>
+      {props.renderPort ? (
+        props.renderPort(port)
+      ) : (
         <Box direction="row" gap="small" align="center">
           <Text>{port.text}</Text>
         </Box>
-      </PortContentBox>
-    );
-  } else {
-    portContent = props.renderPort(port);
-  }
+      )}
+    </PortContentBox>
+  );
 
   return portContent;
 }

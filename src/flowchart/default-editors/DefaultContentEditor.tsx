@@ -10,12 +10,21 @@ const ContentEditor = MDEditor as any;
 interface IMarkdownEditorProps {
   value: string;
   label: string;
+  plugins?: string[];
   style?: React.CSSProperties;
+  onEditorLoaded?: (editor: MDEditor) => void;
   onContentChange: (evt: { content: string }) => void;
   renderNode?: (node: INode) => JSX.Element;
 }
 
 export function MarkdownEditor(props: IMarkdownEditorProps) {
+  React.useEffect(() => {
+    if (props.onEditorLoaded) {
+      props.onEditorLoaded(ContentEditor);
+    }
+    // eslint-disable-next-line
+  }, [true]);
+
   function onImageUpload(file: any) {
     return new Promise((resolve) => {
       const reader = new FileReader();
