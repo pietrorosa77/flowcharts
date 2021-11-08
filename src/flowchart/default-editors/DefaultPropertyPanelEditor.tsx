@@ -81,7 +81,7 @@ export default function DefaultPropertyPanelEditor(props: INodePanelEditor) {
         name="properties"
         collapseStringsAfterLength={20}
         src={node.properties || {}}
-        // onAdd={onEditProperties}
+        onAdd={onEditProperties}
         onEdit={onEditProperties}
         onDelete={onEditProperties}
         enableClipboard={false}

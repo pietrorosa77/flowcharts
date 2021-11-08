@@ -1,4 +1,5 @@
 import FlowChart from "./FlowChart";
+import ReactJsonView from "react-json-view";
 import { EditorTheme, FlowChartColors } from "./defaultTheme";
 import { Diagram } from "./Diagram";
 import { Sidebar } from "./Sidebar";
@@ -29,4 +30,5 @@ export {
   StyledBox,
   StyledButton,
   ConfirmButton,
+  ReactJsonView,
 };
