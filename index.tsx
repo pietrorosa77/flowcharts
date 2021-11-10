@@ -1,9 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { getInitialSchema } from "./flowchart/utils";
-import { ExtendedNode } from "./flowchart/definitions";
+import { getInitialSchema } from "./src/flowchart/utils";
+import { ExtendedNode } from "./src/flowchart/definitions";
 import { nanoid } from "nanoid";
-import FlowDiagramEditor from "./flowchart/FlowChart";
+import FlowDiagramEditor from "./src/flowchart/FlowChart";
 
 const initialChart = getInitialSchema();
 const availableNodes: ExtendedNode[] = [

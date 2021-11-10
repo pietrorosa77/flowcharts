@@ -5,7 +5,6 @@ import {
 } from "./utils";
 import { INode, IOnDragNodeEvent } from "./definitions";
 import styled from "styled-components";
-import { throttle } from "lodash";
 
 export interface INodeDraggerProps {
   children: any;
@@ -18,17 +17,10 @@ export interface INodeDraggerProps {
   onDragEnd: (evt: IOnDragNodeEvent) => void;
 }
 
-const DragContainer = styled.div.attrs<{ props: any }>((props: any) => ({
-  style: {
-    transform: `translate(${props.position.x}px, ${props.position.y}px)`,
-    zIndex: props.dragging ? 110 : 100,
-  },
-}))`
-  position: absolute;
-  cursor: move;
-  &:hover {
-    z-index: 110;
-  }
+
+const DragContainerBordersDragging= styled.div`
+  border-radius: 12px;
+  border: 2px solid ${(props) => props.theme.global.colors["accent-1"]} !important;
 `;
 
 const DragContainerBorders = styled.div`
@@ -42,6 +34,8 @@ const DragContainerBorders = styled.div`
 export function NodeDragger(props: INodeDraggerProps) {
   const position = props.node.position;
   const node = props.node;
+  const Borders = React.useRef(DragContainerBorders);
+  const DraggingBorders = React.useRef(DragContainerBordersDragging);
   const [dragging, setDragging] = React.useState(false);
 
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -69,6 +63,11 @@ export function NodeDragger(props: INodeDraggerProps) {
       y: e.clientY - nodeRect.y,
     };
 
+    const scrollLeft =  canvas.scrollLeft;
+    const rectTop = canvasRect.top; 
+    const rectLeft = canvasRect.left;
+    const scrollTop = canvas.scrollTop;
+
     e.preventDefault();
     e.stopPropagation();
 
@@ -79,12 +78,12 @@ export function NodeDragger(props: INodeDraggerProps) {
 
       const x =
         (e.clientX +
-          canvas.scrollLeft -
-          canvasRect.left -
+          scrollLeft -
+          rectLeft -
           mouseOffsetToNode.x) /
         scale;
       const y =
-        (e.clientY + canvas.scrollTop - canvasRect.top - mouseOffsetToNode.y) /
+        (e.clientY + scrollTop - rectTop - mouseOffsetToNode.y) /
         scale;
 
       const finalPosition = getPositionWithParentBoundsSize(
@@ -105,7 +104,7 @@ export function NodeDragger(props: INodeDraggerProps) {
       );
     };
 
-    const throttledMove = throttle(mouseMoveHandler, 60);
+    const throttledMove = (e: any) => requestAnimationFrame(() => mouseMoveHandler(e))
 
     const mouseUpHandler = (e: MouseEvent) => {
       e.preventDefault();
@@ -134,17 +133,21 @@ export function NodeDragger(props: INodeDraggerProps) {
     ? `flowDiagramNodeDraggerHat drag-hat-selected`
     : `flowDiagramNodeDraggerHat`;
 
+  const BordersC = dragging ? DraggingBorders.current : Borders.current;
   return (
-    <DragContainer
+    <div
       className={className}
+      key={`${node.id}-drag-hat`}
       id={`${node.id}-drag-hat`}
       onMouseDown={onMouseDown}
-      {...{
-        dragging: dragging,
-        position: position,
+      style={{
+        position:"absolute",
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        cursor:"move",
+        zIndex: dragging? 110 : 100
       }}
     >
-      <DragContainerBorders>{props.children}</DragContainerBorders>
-    </DragContainer>
+      <BordersC>{props.children}</BordersC>
+    </div>
   );
 }
