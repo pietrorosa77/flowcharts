@@ -4,7 +4,7 @@ import {
   getPositionWithParentBoundsSize,
 } from "./utils";
 import { INode, IOnDragNodeEvent } from "./definitions";
-import styled from "styled-components";
+import { ThemeContext } from "grommet";
 
 export interface INodeDraggerProps {
   children: any;
@@ -17,26 +17,11 @@ export interface INodeDraggerProps {
   onDragEnd: (evt: IOnDragNodeEvent) => void;
 }
 
-
-const DragContainerBordersDragging= styled.div`
-  border-radius: 12px;
-  border: 2px solid ${(props) => props.theme.global.colors["accent-1"]} !important;
-`;
-
-const DragContainerBorders = styled.div`
-  border-radius: 12px;
-  border: 2px solid ${(props) => props.theme.global.colors["light-1"]};
-  &:hover {
-    border: 2px solid ${(props) => props.theme.global.colors["accent-1"]};
-  }
-`;
-
 export function NodeDragger(props: INodeDraggerProps) {
   const position = props.node.position;
   const node = props.node;
-  const Borders = React.useRef(DragContainerBorders);
-  const DraggingBorders = React.useRef(DragContainerBordersDragging);
   const [dragging, setDragging] = React.useState(false);
+  const theme: any = React.useContext(ThemeContext);
 
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const canvas: HTMLDivElement = document.getElementById(
@@ -63,8 +48,8 @@ export function NodeDragger(props: INodeDraggerProps) {
       y: e.clientY - nodeRect.y,
     };
 
-    const scrollLeft =  canvas.scrollLeft;
-    const rectTop = canvasRect.top; 
+    const scrollLeft = canvas.scrollLeft;
+    const rectTop = canvasRect.top;
     const rectLeft = canvasRect.left;
     const scrollTop = canvas.scrollTop;
 
@@ -133,7 +118,6 @@ export function NodeDragger(props: INodeDraggerProps) {
     ? `flowDiagramNodeDraggerHat drag-hat-selected`
     : `flowDiagramNodeDraggerHat`;
 
-  const BordersC = dragging ? DraggingBorders.current : Borders.current;
   return (
     <div
       className={className}
@@ -141,13 +125,18 @@ export function NodeDragger(props: INodeDraggerProps) {
       id={`${node.id}-drag-hat`}
       onMouseDown={onMouseDown}
       style={{
-        position:"absolute",
+        position: "absolute",
         transform: `translate(${position.x}px, ${position.y}px)`,
-        cursor:"move",
-        zIndex: dragging? 110 : 100
+        cursor: "move",
+        zIndex: dragging ? 110 : 100
       }}
     >
-      <BordersC>{props.children}</BordersC>
+      <div style={
+        {
+          borderRadius: "12px",
+          border: `2px solid ${theme.global.colors[dragging ? "accent-1" : "light-1"]}`,
+        }
+      }>{props.children}</div>
     </div>
   );
 }
