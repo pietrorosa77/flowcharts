@@ -87,7 +87,7 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
     50
   );
 
-  const [theme, setTheme] = React.useState(EditorTheme);
+  const [theme, setTheme] = React.useState(getTheme(props.theme));
   React.useEffect(() => {
     setTheme(getTheme(props.theme));
   }, [props.theme]);

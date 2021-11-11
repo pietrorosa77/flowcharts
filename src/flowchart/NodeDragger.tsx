@@ -62,14 +62,8 @@ export function NodeDragger(props: INodeDraggerProps) {
       e.cancelBubble = true;
 
       const x =
-        (e.clientX +
-          scrollLeft -
-          rectLeft -
-          mouseOffsetToNode.x) /
-        scale;
-      const y =
-        (e.clientY + scrollTop - rectTop - mouseOffsetToNode.y) /
-        scale;
+        (e.clientX + scrollLeft - rectLeft - mouseOffsetToNode.x) / scale;
+      const y = (e.clientY + scrollTop - rectTop - mouseOffsetToNode.y) / scale;
 
       const finalPosition = getPositionWithParentBoundsSize(
         canvasSize,
@@ -89,7 +83,8 @@ export function NodeDragger(props: INodeDraggerProps) {
       );
     };
 
-    const throttledMove = (e: any) => requestAnimationFrame(() => mouseMoveHandler(e))
+    const throttledMove = (e: any) =>
+      requestAnimationFrame(() => mouseMoveHandler(e));
 
     const mouseUpHandler = (e: MouseEvent) => {
       e.preventDefault();
@@ -128,15 +123,19 @@ export function NodeDragger(props: INodeDraggerProps) {
         position: "absolute",
         transform: `translate(${position.x}px, ${position.y}px)`,
         cursor: "move",
-        zIndex: dragging ? 110 : 100
+        zIndex: dragging ? 110 : 100,
       }}
     >
-      <div style={
-        {
+      <div
+        style={{
           borderRadius: "12px",
-          border: `2px solid ${theme.global.colors[dragging ? "accent-1" : "light-1"]}`,
-        }
-      }>{props.children}</div>
+          border: `2px solid ${
+            theme.global.colors[dragging ? "accent-1" : "light-1"]
+          }`,
+        }}
+      >
+        {props.children}
+      </div>
     </div>
   );
 }
