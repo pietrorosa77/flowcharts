@@ -25,6 +25,16 @@ import { EditorTheme, FlowchartTheme } from "./defaultTheme";
 import { deepMerge } from "grommet/utils";
 import { useFlowchartReducer } from "./useFlowchartReducer";
 import { cloneDeep } from "lodash";
+import { createGlobalStyle } from "styled-components";
+
+const GlobalStyle = createGlobalStyle`
+  .flowDiagramNodeDraggerHatBorders {
+    &:hover {
+      border-color: ${(props) =>
+        (props.theme as any).global.colors["accent-1"]} !important;
+    }
+  }
+`;
 
 export interface IFlowChartProps {
   chart: IChart;
@@ -196,6 +206,7 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
         height: props.height,
       }}
     >
+      <GlobalStyle />
       <DiagramContext.Provider value={panZoomData}>
         <Box
           direction="row"

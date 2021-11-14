@@ -52,7 +52,6 @@ interface IDiagramProps {
   highlighted?: Array<string>;
   nodeSize?: number;
   onDragNodeStop: (evt: IOnDragNodeEvent) => void;
-  // onStartConnection: (evt: IOnStartConnection) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
   onNodeSelectionChanged: (evt: IOnNodeSelectionChanged) => void;
   onAreaSelectionChange: (evt: IOnAreaSelectionChanged) => void;

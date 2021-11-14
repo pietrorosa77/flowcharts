@@ -188,6 +188,7 @@ export function NodeDragger(props: INodeDraggerProps) {
       }}
     >
       <div
+        className="flowDiagramNodeDraggerHatBorders"
         style={{
           borderRadius: "12px",
           border: `2px solid ${
