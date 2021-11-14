@@ -25,7 +25,7 @@ export interface INodeProps {
   onDragNodeStop: (evt: IOnDragNodeEvent) => void;
   onStartConnection: (evt: IOnStartConnection) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
-  onNodeSelectionCanged: (evt: IOnNodeSelectionChanged) => void;
+  onNodeSelectionChanged: (evt: IOnNodeSelectionChanged) => void;
   onNodeSizeChanged: (evt: IOnNodeSizeChanged) => void;
   onNodeSettings: (node: INode) => void;
   onNodeDelete: (id: string) => void;
@@ -45,7 +45,10 @@ export const Node = React.memo(
     const [checked, setChecked] = React.useState(props.selected);
 
     React.useEffect(() => {
-      props.onNodeSelectionCanged({
+      if (checked === undefined) {
+        return;
+      }
+      props.onNodeSelectionChanged({
         nodeId: node.id,
         selected: checked ? true : false,
       });
@@ -80,6 +83,7 @@ export const Node = React.memo(
     };
 
     const nodeSize = `${props.maxNodeSize}px`;
+
     return (
       <NodeDragger
         scale={context.scale}

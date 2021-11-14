@@ -1,3 +1,4 @@
+import { deepMerge } from "grommet/utils";
 import { DebouncedFunc, isEqual, throttle } from "lodash";
 import { IChart } from "./definitions";
 type UndoRedoState = {
@@ -13,6 +14,7 @@ export class UndoRedoManager {
       action: {
         type: "undo" | "redo" | "save" | "reset";
         payload?: IChart | undefined;
+        merge?: boolean;
       }
     ) => UndoRedoState
   >;
@@ -23,14 +25,18 @@ export class UndoRedoManager {
       future: [],
     };
 
-    this.throttledReducer = throttle(this.reducer, 500, {
+    this.throttledReducer = throttle(this.reducer, 200, {
       trailing: true,
     });
   }
 
   reducer = (
     oldState: UndoRedoState,
-    action: { type: "undo" | "redo" | "save" | "reset"; payload?: IChart }
+    action: {
+      type: "undo" | "redo" | "save" | "reset";
+      payload?: IChart;
+      merge?: boolean;
+    }
   ): UndoRedoState => {
     const { past, present, future } = oldState;
     let ret = {
@@ -66,11 +72,15 @@ export class UndoRedoManager {
 
       case "save":
         if (!present || !isEqual(action.payload, present)) {
-          ret = {
-            past: [...past, present],
-            present: action.payload as IChart,
-            future: [],
-          };
+          if (!action.merge) {
+            ret = {
+              past: [...past, present],
+              present: action.payload as IChart,
+              future: [],
+            };
+          } else {
+            ret.present = deepMerge(ret.present, action.payload as IChart);
+          }
         }
         break;
 
@@ -86,10 +96,11 @@ export class UndoRedoManager {
     return ret;
   };
 
-  save(currentState: IChart): void {
-    this.current = this.throttledReducer(this.current, {
+  save(currentState: IChart, action: string): void {
+    this.current = this.reducer(this.current, {
       type: "save",
       payload: currentState,
+      merge: action === "onNodeSizeChanged",
     }) as UndoRedoState;
   }
 

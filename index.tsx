@@ -34,6 +34,7 @@ ReactDOM.render(
       //height="500px"
       nodeSize={250}
       chart={initialChart}
+      sidebarInitiallyOpened
       sidebarButtons={availableNodes}
       name="My flowchart"
       // canvasContainerBgColor="blue"

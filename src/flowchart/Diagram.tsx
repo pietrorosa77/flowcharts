@@ -54,7 +54,7 @@ interface IDiagramProps {
   onDragNodeStop: (evt: IOnDragNodeEvent) => void;
   // onStartConnection: (evt: IOnStartConnection) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
-  onNodeSelectionCanged: (evt: IOnNodeSelectionChanged) => void;
+  onNodeSelectionChanged: (evt: IOnNodeSelectionChanged) => void;
   onAreaSelectionChange: (evt: IOnAreaSelectionChanged) => void;
   onNodeAdded: (evt: INode) => void;
   onNodeSizeChanged: (evt: IOnNodeSizeChanged) => void;
@@ -96,12 +96,12 @@ export const Diagram = (props: IDiagramProps) => {
         key={key}
         maxNodeSize={props.nodeSize || 250}
         canvasId={canvasId}
-        selected={chart.selected[key] ? true : false}
+        selected={chart.selected[key]}
         node={chart.nodes[key]}
         links={Object.keys(chart.links)
           .filter((k) => chart.links[k].from.nodeId === key)
           .map((linkId) => chart.links[linkId])}
-        onNodeSelectionCanged={props.onNodeSelectionCanged}
+        onNodeSelectionChanged={props.onNodeSelectionChanged}
         onDragNodeStop={props.onDragNodeStop}
         onNodeSizeChanged={props.onNodeSizeChanged}
         onNodeDelete={onNodeDelete}

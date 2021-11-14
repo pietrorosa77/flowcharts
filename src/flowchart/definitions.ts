@@ -88,9 +88,6 @@ export interface IOnDragNodeEvent {
 export interface IOnStartConnection {
   newLink: ILink;
 }
-export interface IOnUndoRedo {
-  chart: IChart;
-}
 
 export interface IOnEndConnection {
   link: ILink;
@@ -125,29 +122,16 @@ export type Actions =
   | "onAreaSelectionChanged"
   | "onNodeAdded"
   | "onUndo"
-  | "onPanChange"
-  | "onZoomOut"
-  | "onZoomIn"
-  | "onZoomReset"
-  | "toggleSidebar"
-  | "onNodeSettings"
   | "onUpdateNode"
   | "onNodeSizeChanged"
-  | "onStartAsyncOperation"
-  | "onEndAsyncOperation"
   | "onNameChange"
   | "onRedo";
 
 export interface IFlowchartState {
   chart: IChart;
   name: string;
-  panZoomData: IDiagramContext;
-  uiState: {
-    sidebarOpened: boolean;
-    propertyPane?: INode;
-    changed?: boolean;
-    asyncOperation?: string;
-  };
+  canUndo: boolean;
+  canRedo: boolean;
   changeSummary: {
     totalActions: number;
     lastAction: Actions | undefined;
@@ -193,7 +177,6 @@ export type DiagramEventArgs =
   | IOnAreaSelectionChanged
   | INode
   | IOnNodeSizeChanged
-  | IOnUndoRedo
   | string
   | string[]
   | { x: number; y: number };

@@ -6,7 +6,6 @@ import {
   DiagramEventArgs,
   ExtendedNode,
   IChart,
-  IDiagramContext,
   IFlowchartState,
   INode,
   INodePanelEditor,
@@ -25,6 +24,7 @@ import { BottomCommands } from "./BottomCommands";
 import { EditorTheme, FlowchartTheme } from "./defaultTheme";
 import { deepMerge } from "grommet/utils";
 import { useFlowchartReducer } from "./useFlowchartReducer";
+import { cloneDeep } from "lodash";
 
 export interface IFlowChartProps {
   chart: IChart;
@@ -48,13 +48,13 @@ export interface IFlowChartProps {
   portPropertiesValidator?: (newProps: { [key: string]: any }) => {
     error: string | undefined;
   };
-  onPanZoomChange?: (evt: IDiagramContext) => void;
   onDiagramChanging?: (
     state: IFlowchartState,
     type: Actions,
     payload: DiagramEventArgs
   ) => void;
   onDiagramChanged?: (state: IFlowchartState, type: Actions) => void;
+  sidebarInitiallyOpened?: boolean;
 }
 
 const getTheme = (theme?: FlowchartTheme) => {
@@ -78,14 +78,26 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
     }
   };
 
-  const [appState, dispatch, history] = useFlowchartReducer(
+  const [sidebarOpened, setSidebarOpened] = React.useState(
+    props.sidebarInitiallyOpened
+  );
+  const [panelSettings, setPanelSettings] = React.useState<INode>();
+  const [panZoomData, setPanZoomData] = React.useState({
+    x: 0,
+    y: 0,
+    scale: 1,
+    minZoom: 0.1,
+    maxZoom: 2,
+  });
+  const [appState, dispatch] = useFlowchartReducer(
     reducer,
     getInitialState(props.chart, props.name),
     onAppStateChanging,
     onAppStateChanged
   );
-
   const [theme, setTheme] = React.useState(getTheme(props.theme));
+  const highLightNodes = panelSettings ? [panelSettings.id] : [];
+
   React.useEffect(() => {
     setTheme(getTheme(props.theme));
   }, [props.theme]);
@@ -99,17 +111,92 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
   const portPropertiesValidator =
     props.portPropertiesValidator || (() => ({ error: undefined }));
 
+  const toggleSidebar = () => {
+    setSidebarOpened(!sidebarOpened);
+  };
+
+  const closePanelSettings = () => {
+    setPanelSettings(undefined);
+  };
+
+  const openPanelSettings = (node: INode) => {
+    setPanelSettings(cloneDeep(node));
+  };
+
+  const onPanChange = (x: number, y: number) => {
+    setPanZoomData({
+      ...panZoomData,
+      x,
+      y,
+    });
+  };
+
+  const onZoomIn = () => {
+    setPanZoomData({
+      ...panZoomData,
+      scale: panZoomData.scale + 0.2,
+    });
+  };
+
+  const onZoomOut = () => {
+    setPanZoomData({
+      ...panZoomData,
+      scale: panZoomData.scale - 0.2,
+    });
+  };
+
+  const onZoomReset = () => {
+    setPanZoomData({
+      ...panZoomData,
+      x: 0,
+      y: 0,
+      scale: 1,
+    });
+  };
+
+  const onDeleteNodes = (evt: string[]) => {
+    if (panelSettings && evt.includes(panelSettings.id)) {
+      closePanelSettings();
+    }
+    onDiagramEvent("onDeleteNodes", evt);
+  };
+
+  const onUndo = () => onDiagramEvent("onUndo", {});
+
+  const onRedo = () => onDiagramEvent("onRedo", {});
+
+  const onNodeUpdated = (evt: INode) => onDiagramEvent("onUpdateNode", evt);
+
+  const onDragNodeStop = (evt: IOnDragNodeEvent) =>
+    onDiagramEvent("onDragNodeStop", evt);
+
+  const onNodeSelectionChanged = (evt: IOnNodeSelectionChanged) =>
+    onDiagramEvent("onNodeSelectionChanged", evt);
+
+  const onNodeSizeChanged = (evt: IOnNodeSizeChanged) =>
+    onDiagramEvent("onNodeSizeChanged", evt);
+
+  const onEndConnection = (evt: IOnEndConnection) =>
+    onDiagramEvent("onEndConnection", evt);
+
+  const onAreaSelectionChange = (evt: IOnAreaSelectionChanged) =>
+    onDiagramEvent("onAreaSelectionChanged", evt);
+
+  const onDeleteLink = (evt: string) => onDiagramEvent("onDeleteLink", evt);
+
+  const onNodeAdded = (evt: INode) => onDiagramEvent("onNodeAdded", evt);
+
   return (
     <Grommet
       theme={theme}
       full
       style={{
         overflow: "hidden",
-        width: props.width || undefined,
-        height: props.height || undefined,
+        width: props.width,
+        height: props.height,
       }}
     >
-      <DiagramContext.Provider value={appState.panZoomData}>
+      <DiagramContext.Provider value={panZoomData}>
         <Box
           direction="row"
           style={{ touchAction: "none", position: "relative" }}
@@ -122,8 +209,8 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
             <Sidebar
               buttons={props.sidebarButtons}
               width="250px"
-              onClose={() => onDiagramEvent("toggleSidebar", {})}
-              opened={appState.uiState.sidebarOpened}
+              onClose={toggleSidebar}
+              opened={sidebarOpened}
             />
             <PropertyPanel
               width="500px"
@@ -131,9 +218,9 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
               portPropertiesValidator={portPropertiesValidator}
               renderNode={props.renderNode}
               renderPort={props.renderPort}
-              node={appState.uiState.propertyPane}
-              onClose={() => onDiagramEvent("onNodeSettings", undefined)}
-              onNodeUpdated={(evt: any) => onDiagramEvent("onUpdateNode", evt)}
+              node={panelSettings}
+              onClose={closePanelSettings}
+              onNodeUpdated={onNodeUpdated}
               customData={props.customData}
               onLoadPropertyPanel={props.onLoadPropertyPanel}
             />
@@ -142,56 +229,32 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
               chart={appState.chart}
               renderNode={props.renderNode}
               renderPort={props.renderPort}
-              highlighted={
-                appState.uiState.propertyPane
-                  ? [appState.uiState.propertyPane.id]
-                  : []
-              }
-              onDragNodeStop={(evt: IOnDragNodeEvent) =>
-                onDiagramEvent("onDragNodeStop", evt)
-              }
-              onNodeSelectionCanged={(evt: IOnNodeSelectionChanged) =>
-                onDiagramEvent("onNodeSelectionChanged", evt)
-              }
-              onNodeSizeChanged={(evt: IOnNodeSizeChanged) =>
-                onDiagramEvent("onNodeSizeChanged", evt)
-              }
-              onEndConnection={(evt: IOnEndConnection) => {
-                return onDiagramEvent("onEndConnection", evt);
-              }}
-              onAreaSelectionChange={(evt: IOnAreaSelectionChanged) =>
-                onDiagramEvent("onAreaSelectionChanged", evt)
-              }
-              onNodeSettings={(evt: INode) =>
-                onDiagramEvent("onNodeSettings", evt)
-              }
-              onDeleteNodes={(evt: string[]) =>
-                onDiagramEvent("onDeleteNodes", evt)
-              }
-              onDeleteLink={(evt: string) =>
-                onDiagramEvent("onDeleteLink", evt)
-              }
-              onPanChange={(x: number, y: number) => {
-                onDiagramEvent("onPanChange", { x, y });
-              }}
-              onNodeAdded={(evt: INode) => onDiagramEvent("onNodeAdded", evt)}
+              highlighted={highLightNodes}
+              onDragNodeStop={onDragNodeStop}
+              onNodeSelectionChanged={onNodeSelectionChanged}
+              onNodeSizeChanged={onNodeSizeChanged}
+              onEndConnection={onEndConnection}
+              onAreaSelectionChange={onAreaSelectionChange}
+              onNodeSettings={openPanelSettings}
+              onDeleteNodes={onDeleteNodes}
+              onDeleteLink={onDeleteLink}
+              onPanChange={onPanChange}
+              onNodeAdded={onNodeAdded}
             />
             <BottomCommands
-              sidebarOpened={appState.uiState.sidebarOpened}
-              maxZoom={appState.panZoomData.maxZoom}
-              minZoom={appState.panZoomData.minZoom}
+              sidebarOpened={sidebarOpened}
+              maxZoom={panZoomData.maxZoom}
+              minZoom={panZoomData.minZoom}
               chart={appState.chart}
-              onRedo={() => onDiagramEvent("onRedo", { chart: history.redo() })}
-              onUndo={() => onDiagramEvent("onUndo", { chart: history.undo() })}
-              onZoomIn={() => onDiagramEvent("onZoomIn", {})}
-              onZoomOut={() => onDiagramEvent("onZoomOut", {})}
-              onZoomReset={() => onDiagramEvent("onZoomReset", {})}
-              onDeleteNodes={(evt: string[]) =>
-                onDiagramEvent("onDeleteNodes", evt)
-              }
-              toggleSidebar={() => onDiagramEvent("toggleSidebar", {})}
-              canRedo={history.canRedo()}
-              canUndo={history.canUndo()}
+              onRedo={onRedo}
+              onUndo={onUndo}
+              onZoomIn={onZoomIn}
+              onZoomOut={onZoomOut}
+              onZoomReset={onZoomReset}
+              onDeleteNodes={onDeleteNodes}
+              toggleSidebar={toggleSidebar}
+              canRedo={appState.canRedo}
+              canUndo={appState.canUndo}
             />
           </Box>
         </Box>

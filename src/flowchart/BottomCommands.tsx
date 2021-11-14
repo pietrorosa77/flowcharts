@@ -12,7 +12,7 @@ interface BottomCommandsProps {
   maxZoom: number;
   minZoom: number;
   chart: IChart;
-  sidebarOpened: boolean;
+  sidebarOpened?: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;

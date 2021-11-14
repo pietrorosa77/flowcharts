@@ -11,12 +11,12 @@ import {
   IFlowchartState,
   DiagramEventArgs,
   Actions,
-  IOnUndoRedo,
 } from "./definitions";
 import { getPositionWithParentBoundsSize } from "./utils";
-
+import { UndoRedoManager } from "./undo-redo";
 import { nanoid } from "nanoid";
-import { cloneDeep } from "lodash";
+
+let history: UndoRedoManager;
 
 export const reducer = (
   state: IFlowchartState,
@@ -24,26 +24,16 @@ export const reducer = (
 ) => {
   let ret: IChart = state.chart;
   let name = state.name;
-  let retCxt = state.panZoomData;
-  let uiState = state.uiState;
   const changeSummary = {
     totalActions: state.changeSummary.totalActions + 1,
     lastAction: action.type as Actions | undefined,
   };
 
+  if (!history) {
+    history = new UndoRedoManager(state.chart);
+  }
+
   switch (action.type) {
-    case "onStartAsyncOperation":
-      uiState = {
-        ...uiState,
-        asyncOperation: action.payload as string,
-      };
-      break;
-    case "onEndAsyncOperation":
-      uiState = {
-        ...uiState,
-        asyncOperation: undefined,
-      };
-      break;
     case "onAreaSelectionChanged":
       ret = onAreaSelectionChanged(
         state.chart,
@@ -61,14 +51,6 @@ export const reducer = (
       break;
     case "onDeleteNodes":
       ret = onDeleteNodes(state.chart, action.payload as string[]);
-      uiState = {
-        ...uiState,
-        propertyPane: (action.payload as string[]).includes(
-          uiState.propertyPane?.id as string
-        )
-          ? undefined
-          : uiState.propertyPane,
-      };
       break;
     case "onDeleteLink":
       ret = onDeleteLink(state.chart, action.payload as string);
@@ -79,9 +61,6 @@ export const reducer = (
     case "onDragNodeStop":
       ret = onDragNodeStop(state.chart, action.payload as IOnDragNodeEvent);
       break;
-    // case "onDragNode":
-    //   ret = // onDragNode(state.chart, action.payload as IOnDragNodeEvent);
-    //   break;
     case "onUpdateNode":
       ret = onUpdateNode(state.chart, action.payload as INode);
       break;
@@ -93,68 +72,24 @@ export const reducer = (
       break;
     case "onUndo":
     case "onRedo":
-      ret = (action.payload as IOnUndoRedo).chart;
+      ret = action.type === "onUndo" ? history.undo() : history.redo();
       break;
-    case "onPanChange":
-      retCxt = {
-        ...retCxt,
-        x: (action.payload as { x: number }).x,
-        y: (action.payload as { y: number }).y,
-      };
-      break;
-    case "onZoomReset":
-      retCxt = {
-        ...retCxt,
-        x: 0,
-        y: 0,
-        scale: 1,
-      };
-      break;
-    case "onZoomIn":
-      retCxt = {
-        ...retCxt,
-        scale: retCxt.scale + 0.2,
-      };
-      break;
-    case "onZoomOut":
-      retCxt = {
-        ...retCxt,
-        scale: retCxt.scale - 0.2,
-      };
-      break;
-
-    case "toggleSidebar":
-      uiState = {
-        ...uiState,
-        sidebarOpened: !uiState.sidebarOpened,
-      };
-      break;
-
-    case "onNodeSettings":
-      uiState = {
-        ...uiState,
-        propertyPane: action.payload
-          ? cloneDeep(action.payload as INode)
-          : undefined,
-      };
-      break;
-
     case "onNameChange":
       name = action.payload as string;
       break;
 
     default:
       ret = state.chart;
-      uiState = state.uiState;
-      retCxt = state.panZoomData;
       break;
   }
 
+  history.save(ret, action.type);
+
   return {
     name,
+    canUndo: history.canUndo(),
+    canRedo: history.canRedo(),
     chart: ret,
-    panZoomData: retCxt,
-    uiState,
     changeSummary,
   };
 };
@@ -165,18 +100,9 @@ export const getInitialState = (
 ): IFlowchartState => {
   return {
     name,
+    canRedo: false,
+    canUndo: false,
     chart,
-    panZoomData: {
-      x: 0,
-      y: 0,
-      scale: 1,
-      minZoom: 0.1,
-      maxZoom: 2,
-    },
-    uiState: {
-      sidebarOpened: true,
-      propertyPane: undefined,
-    },
     changeSummary: {
       totalActions: 0,
       lastAction: undefined,
@@ -394,10 +320,6 @@ export const onNodeAdded = (chart: IChart, node: INode): IChart => {
       ...chart.nodes,
       [`${node.id}`]: node,
     },
-    selected: {
-      ...chart.selected,
-      [`${node.id}`]: false,
-    },
   };
 };
 
@@ -419,7 +341,7 @@ export const isValidLink = (
   links: ILink[],
   fromNodeId: string
 ) => {
-
+  console.log("from node id", fromNodeId);
   return (
     //nodeToId !== fromNodeId &&
     links.filter((l) => l.to === nodeToId).length === 0

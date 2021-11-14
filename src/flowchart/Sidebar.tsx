@@ -8,7 +8,7 @@ import { CollapsibleLeftPanel } from "./CollapsibleLeftPanel";
 import { StyledButton } from "./ActionButton";
 
 export interface ISidebarProps {
-  opened: boolean;
+  opened?: boolean;
   onClose: () => void;
   buttons: ExtendedNode[];
   width: string;
@@ -39,7 +39,7 @@ export const Sidebar = ({ opened, onClose, buttons, width }: ISidebarProps) => {
 
   return (
     <CollapsibleLeftPanel
-      opened={opened}
+      opened={opened || false}
       opacity={0.8}
       width={width}
       onClose={onClose}

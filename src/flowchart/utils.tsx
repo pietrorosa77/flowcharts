@@ -88,9 +88,7 @@ export const getInitialSchema = (): IChart => {
       },
     },
     links: {},
-    selected: {
-      node1: false,
-    },
+    selected: {},
     paths: {},
   };
 };

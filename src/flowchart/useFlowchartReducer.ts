@@ -1,6 +1,6 @@
 import React from "react";
 import { Actions, DiagramEventArgs, IFlowchartState } from "./definitions";
-import { UndoRedoManager } from "./undo-redo";
+//import { UndoRedoManager } from "./undo-redo";
 
 export const useFlowchartReducer = (
   reducer: (
@@ -27,13 +27,13 @@ export const useFlowchartReducer = (
   React.Dispatch<{
     type: Actions;
     payload: DiagramEventArgs;
-  }>,
-  UndoRedoManager
+  }>
+  //UndoRedoManager
 ] => {
-  const history = React.useRef<UndoRedoManager>();
-  if (!history.current) {
-    history.current = new UndoRedoManager(initialState.chart);
-  }
+  //const history = React.useRef<UndoRedoManager>();
+  // if (!history.current) {
+  //   history.current = new UndoRedoManager(initialState.chart);
+  // }
 
   const [appState, dispatch] = React.useReducer(reducer, initialState);
   const wrappedDispatch: React.Dispatch<{
@@ -48,12 +48,12 @@ export const useFlowchartReducer = (
     if (!appState.changeSummary.lastAction) {
       return;
     }
-    if (!["onNodeAdded"].includes(appState.changeSummary.lastAction)) {
-      history.current?.save(appState.chart);
-    }
+    // if (!["onNodeAdded"].includes(appState.changeSummary.lastAction)) {
+    //   history.current?.save(appState.chart);
+    // }
     onStateChanged(appState, appState.changeSummary.lastAction as Actions);
     // eslint-disable-next-line
   }, [appState.changeSummary.totalActions, onStateChanged]);
 
-  return [appState, wrappedDispatch, history.current];
+  return [appState, wrappedDispatch];
 };
