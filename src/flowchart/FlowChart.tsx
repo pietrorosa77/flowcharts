@@ -15,7 +15,6 @@ import {
   IOnEndConnection,
   IOnNodeSelectionChanged,
   IOnNodeSizeChanged,
-  IOnStartConnection,
   IPort,
 } from "./definitions";
 import { Box, Grommet } from "grommet";
@@ -83,8 +82,7 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
     reducer,
     getInitialState(props.chart, props.name),
     onAppStateChanging,
-    onAppStateChanged,
-    50
+    onAppStateChanged
   );
 
   const [theme, setTheme] = React.useState(getTheme(props.theme));
@@ -149,14 +147,8 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
                   ? [appState.uiState.propertyPane.id]
                   : []
               }
-              onDragNode={(evt: IOnDragNodeEvent) =>
-                onDiagramEvent("onDragNode", evt)
-              }
               onDragNodeStop={(evt: IOnDragNodeEvent) =>
                 onDiagramEvent("onDragNodeStop", evt)
-              }
-              onStartConnection={(evt: IOnStartConnection) =>
-                onDiagramEvent("onStartConnection", evt)
               }
               onNodeSelectionCanged={(evt: IOnNodeSelectionChanged) =>
                 onDiagramEvent("onNodeSelectionChanged", evt)

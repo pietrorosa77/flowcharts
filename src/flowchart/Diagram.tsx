@@ -13,6 +13,7 @@ import {
   IOnNodeSizeChanged,
   IPort,
   IPosition,
+  ILink,
 } from "./definitions";
 import { PORT_OFFSET_Y } from "./Port";
 import { ZoomLayer } from "./Zoom";
@@ -50,9 +51,8 @@ interface IDiagramProps {
   chart: IChart;
   highlighted?: Array<string>;
   nodeSize?: number;
-  onDragNode: (evt: IOnDragNodeEvent) => void;
   onDragNodeStop: (evt: IOnDragNodeEvent) => void;
-  onStartConnection: (evt: IOnStartConnection) => void;
+  // onStartConnection: (evt: IOnStartConnection) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
   onNodeSelectionCanged: (evt: IOnNodeSelectionChanged) => void;
   onAreaSelectionChange: (evt: IOnAreaSelectionChanged) => void;
@@ -68,6 +68,7 @@ interface IDiagramProps {
 
 export const Diagram = (props: IDiagramProps) => {
   const [canvasId] = React.useState<string>(nanoid(8));
+  const [newLink, setNewLink] = React.useState<ILink>();
   const chart = props.chart;
   const canvas = React.createRef<HTMLDivElement>();
   const diagramContext = React.useContext(DiagramContext);
@@ -78,6 +79,15 @@ export const Diagram = (props: IDiagramProps) => {
 
   const onNodeDelete = (id: string) => {
     props.onDeleteNodes([id]);
+  };
+
+  const onStartConnection = (evt: IOnStartConnection) => {
+    setNewLink(evt.newLink);
+  };
+
+  const onEndConnection = (evt: IOnEndConnection) => {
+    setNewLink(undefined);
+    props.onEndConnection(evt);
   };
 
   const renderNodes = () => {
@@ -91,13 +101,12 @@ export const Diagram = (props: IDiagramProps) => {
         links={Object.keys(chart.links)
           .filter((k) => chart.links[k].from.nodeId === key)
           .map((linkId) => chart.links[linkId])}
-        onDragNode={props.onDragNode}
         onNodeSelectionCanged={props.onNodeSelectionCanged}
         onDragNodeStop={props.onDragNodeStop}
         onNodeSizeChanged={props.onNodeSizeChanged}
         onNodeDelete={onNodeDelete}
-        onStartConnection={props.onStartConnection}
-        onEndConnection={props.onEndConnection}
+        onStartConnection={onStartConnection}
+        onEndConnection={onEndConnection}
         onNodeSettings={props.onNodeSettings}
         highlighted={highlighted.includes(key)}
         renderPort={props.renderPort}
@@ -126,16 +135,16 @@ export const Diagram = (props: IDiagramProps) => {
   };
 
   const renderNewLink = () => {
-    if (!chart.newLink) return null;
+    if (!newLink) return null;
     return (
       <Link
         portHeight={PORT_OFFSET_Y}
-        id={chart.newLink.id}
-        portFrom={chart.newLink.from.portId}
-        nodeFrom={chart.nodes[chart.newLink.from.nodeId]}
+        id={newLink.id}
+        portFrom={newLink.from.portId}
+        nodeFrom={chart.nodes[newLink.from.nodeId]}
         nodeTo={{
           id: "fakeNode",
-          position: chart.newLink.posTo as IPosition,
+          position: newLink.posTo as IPosition,
           content: "",
           title: "",
           ports: {},

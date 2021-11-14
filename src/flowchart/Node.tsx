@@ -22,7 +22,6 @@ import { ActionButton } from "./ActionButton";
 export interface INodeProps {
   node: INode;
   links: Array<ILink>;
-  onDragNode: (evt: IOnDragNodeEvent) => void;
   onDragNodeStop: (evt: IOnDragNodeEvent) => void;
   onStartConnection: (evt: IOnStartConnection) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
@@ -70,7 +69,7 @@ export const Node = React.memo(
 
     const setCheckedCB = (event: any) => {
       setChecked(event.target.checked);
-    }
+    };
 
     const onNodeSettings = () => {
       props.onNodeSettings(node);
@@ -88,7 +87,6 @@ export const Node = React.memo(
         selected={props.selected}
         parentBoundId={props.canvasId}
         onDragEnd={props.onDragNodeStop}
-        onDrag={props.onDragNode}
       >
         <Box
           className="flowDiagramNodeContainer"
@@ -103,19 +101,19 @@ export const Node = React.memo(
             boxShadow: props.selected
               ? `0 0 20px 5px ${theme.global.colors["accent-1"]}`
               : props.highlighted
-                ? `0 0 20px 5px ${theme.global.colors["nodehighlight"]}`
-                : "none",
+              ? `0 0 20px 5px ${theme.global.colors["nodehighlight"]}`
+              : "none",
           }}
           id={`node-${node.id}`}
           data-node-id={node.id}
           ref={ref as any}
         >
-          <NodeHeader 
-            title={node.title} 
-            checked={checked} 
-            onDelete={onNodeDelete} 
-            onSettings={onNodeSettings} 
-            onCheckedChange={setCheckedCB} 
+          <NodeHeader
+            title={node.title}
+            checked={checked}
+            onDelete={onNodeDelete}
+            onSettings={onNodeSettings}
+            onCheckedChange={setCheckedCB}
           />
           <Box
             responsive={false}
@@ -186,63 +184,58 @@ export const NodeContentView = React.memo(
 );
 
 interface INodeHeaderProps {
-  checked?: boolean; onCheckedChange: (event: any) => void; title: string; onDelete: () => void; onSettings: () => void
+  checked?: boolean;
+  onCheckedChange: (event: any) => void;
+  title: string;
+  onDelete: () => void;
+  onSettings: () => void;
 }
 
- export const NodeHeader = 
-  React.memo(function NodeHeaderInner(props: INodeHeaderProps) {
-    const { checked, onCheckedChange, title, onDelete, onSettings } = props;
-    return (
+export const NodeHeader = (props: INodeHeaderProps) => {
+  const { checked, onCheckedChange, title, onDelete, onSettings } = props;
+  return (
+    <Box
+      round={{ corner: "top", size: "small" }}
+      pad="5px"
+      responsive={false}
+      width="100%"
+      justify="center"
+      background={{ color: "brand", opacity: 0.8 }}
+      overflow="hidden"
+    >
       <Box
-        round={{ corner: "top", size: "small" }}
-        pad="5px"
+        direction="row"
         responsive={false}
-        width="100%"
-        justify="center"
-        background={{ color: "brand", opacity: 0.8 }}
-        overflow="hidden"
+        gap="xsmall"
+        data-stopdrag={true}
+        style={{ alignItems: "center" }}
       >
-        <Box
-          direction="row"
-          responsive={false}
-          gap="xsmall"
-          data-stopdrag={true}
-          style={{ alignItems: "center" }}
-        >
-          <Box onMouseDown={blockEvent}>
-            <CheckBox
-              checked={checked ? true : false}
-              onChange={onCheckedChange}
-            />
-          </Box>
-          <Box style={{ flex: 1 }}>
-            <Text>{title}</Text>
-          </Box>
-          <Box direction="row-reverse" gap="xsmall">
-            <ActionButton
-              icon={<Configure size="20" />}
-              style={{ padding: "2px" }}
-              plain
-              onClick={onSettings}
-              size="small"
-            />
-            <ActionButton
-              plain
-              style={{ padding: "2px" }}
-              icon={<Trash size="20" />}
-              onClick={onDelete}
-              size="small"
-            />
-          </Box>
+        <Box onMouseDown={blockEvent}>
+          <CheckBox
+            checked={checked ? true : false}
+            onChange={onCheckedChange}
+          />
+        </Box>
+        <Box style={{ flex: 1 }}>
+          <Text>{title}</Text>
+        </Box>
+        <Box direction="row-reverse" gap="xsmall">
+          <ActionButton
+            icon={<Configure size="20" />}
+            style={{ padding: "2px" }}
+            plain
+            onClick={onSettings}
+            size="small"
+          />
+          <ActionButton
+            plain
+            style={{ padding: "2px" }}
+            icon={<Trash size="20" />}
+            onClick={onDelete}
+            size="small"
+          />
         </Box>
       </Box>
-    )
-  }, function arePropsEqual(
-    prevProps: INodeHeaderProps,
-    nextProps: INodeHeaderProps
-  ) {
-    return (
-      prevProps.title === nextProps.title &&
-      prevProps.checked === nextProps.checked
-    );
-  });
+    </Box>
+  );
+};

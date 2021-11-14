@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Actions,
-  DiagramEventArgs,
-  IChart,
-  IFlowchartState,
-} from "./definitions";
+import { Actions, DiagramEventArgs, IFlowchartState } from "./definitions";
 import { UndoRedoManager } from "./undo-redo";
 
 export const useFlowchartReducer = (
@@ -21,8 +16,7 @@ export const useFlowchartReducer = (
     type: Actions,
     payload: DiagramEventArgs
   ) => void,
-  onStateChanged: (state: IFlowchartState, type: Actions) => void,
-  maxHistoryLength = 50
+  onStateChanged: (state: IFlowchartState, type: Actions) => void
   //   logger?: (
   //     type: Actions,
   //     when: "beforeAction" | "afterAction",
@@ -34,14 +28,11 @@ export const useFlowchartReducer = (
     type: Actions;
     payload: DiagramEventArgs;
   }>,
-  UndoRedoManager<IChart>
+  UndoRedoManager
 ] => {
-  const history = React.useRef<UndoRedoManager<IChart>>();
+  const history = React.useRef<UndoRedoManager>();
   if (!history.current) {
-    history.current = new UndoRedoManager<IChart>(
-      initialState.chart,
-      maxHistoryLength
-    );
+    history.current = new UndoRedoManager(initialState.chart);
   }
 
   const [appState, dispatch] = React.useReducer(reducer, initialState);
@@ -57,10 +48,9 @@ export const useFlowchartReducer = (
     if (!appState.changeSummary.lastAction) {
       return;
     }
-    history.current?.save(
-      appState.chart,
-      appState.changeSummary.lastAction as Actions
-    );
+    if (!["onNodeAdded"].includes(appState.changeSummary.lastAction)) {
+      history.current?.save(appState.chart);
+    }
     onStateChanged(appState, appState.changeSummary.lastAction as Actions);
     // eslint-disable-next-line
   }, [appState.changeSummary.totalActions, onStateChanged]);

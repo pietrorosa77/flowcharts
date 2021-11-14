@@ -2,7 +2,6 @@ import * as React from "react";
 import styled from "styled-components";
 import { IPosition, INode } from "./definitions";
 import { ThemeContext, Button } from "grommet";
-import { isEqual } from "lodash";
 import { Cycle, Unlink } from "grommet-icons";
 import { ActionButton } from "./ActionButton";
 
@@ -29,7 +28,7 @@ const DelButton = styled(Button)<{ x: number; y: number }>`
     }
   }
 `;
-//"translate3d(" + delPoint.x + "px," + delPoint.y + "px, 0)",
+
 export interface ILinkProps {
   portFrom: string;
   nodeFrom: INode;
@@ -40,168 +39,182 @@ export interface ILinkProps {
   onDeleteLink?: (id: string) => void;
 }
 
-export const Link = React.memo(
-  function LinkInner(props: ILinkProps) {
-    const lineEl = React.useRef<SVGPathElement>(null);
-    const portIndex = props.nodeFrom.ports[props.portFrom].index;
-    // center the line in the middle of the port so:
-    // so subtract from port height hlf the line strokeWidth and  divide by 2 to get the middle
-    const offsetY = (props.portHeight - 2) / 2;
-    const startPos = {
-      x:
-        props.nodeFrom.position.x +
-        (props.nodeFrom.size ? props.nodeFrom.size.w : 0),
-      y:
-        props.nodeFrom.position.y +
-        (props.nodeFrom.size ? props.nodeFrom.size.h : 0) -
-        (portIndex || 1) * props.portHeight +
-        offsetY,
-    };
-    let endPos = props.nodeTo.position;
-    const theme: any = React.useContext(ThemeContext);
-    //const [delPoint, setDelPoint] = React.useState({ x: 0, y: 0 });
-    const [isHovered, setIsHover] = React.useState(false);
+export const Link = (props: ILinkProps) => {
+  const fromId = props.nodeFrom.id;
+  const toId = props.nodeTo.id;
+  const fromToKey = `${fromId}-${toId}`;
+  const fromFromProps = props.nodeFrom.position;
+  const toFromProps = props.nodeTo.position;
+  const [from, setFrom] = React.useState(fromFromProps);
+  const [to, setTo] = React.useState(toFromProps);
+  const lineEl = React.useRef<SVGPathElement>(null);
+  const portIndex = props.nodeFrom.ports[props.portFrom].index;
 
-    const getMidPoint = () => {
-      if (!lineEl.current) {
-        return null;
+  React.useEffect(() => {
+    const nodeMovingListener = (evt: any) => {
+      const { id, position } = evt.detail;
+
+      if (id !== fromId && id !== toId) {
+        return;
       }
 
-      const pathLength = Math.floor(lineEl.current.getTotalLength());
-      const pathMiddle = (50 * pathLength) / 100;
-      const midPoint = lineEl.current.getPointAtLength(pathMiddle);
-      return midPoint;
-    };
-
-    const midPoint = getMidPoint();
-
-    const onHover = () => {
-      setIsHover(true);
-    };
-
-    const onOut = () => {
-      setIsHover(false);
-    };
-
-    const onDelete = () => {
-      if (props.onDeleteLink) {
-        props.onDeleteLink(props.id);
+      if (id === fromId) {
+        setFrom(position);
+      } else {
+        setTo(position);
       }
     };
+    document.addEventListener("nodePositionChanged", nodeMovingListener);
+    return () => {
+      document.removeEventListener("nodePositionChanged", nodeMovingListener);
+    };
+    // eslint-disable-next-line
+  }, [fromToKey]);
 
-    if (!startPos || !endPos) return null;
+  React.useEffect(() => {
+    setFrom(fromFromProps);
+  }, [fromFromProps]);
 
-    if (props.nodeTo.id === props.nodeFrom.id) {
-      return (
-        <ActionButton
-          icon={<Cycle size="24" />}
-          plain
-          bgColor="#fff"
-          fontColor="accent-1"
-          tip="remove cycle link"
-          style={{
-            position: "absolute",
-            top: startPos.y - 12,
-            left: startPos.x - 12,
-            padding: "2px",
-            zIndex: 110,
-          }}
-          onClick={onDelete}
-          size="small"
-        />
-      );
+  React.useEffect(() => {
+    setTo(toFromProps);
+  }, [toFromProps]);
+  // center the line in the middle of the port so:
+  // so subtract from port height hlf the line strokeWidth and  divide by 2 to get the middle
+  const offsetY = (props.portHeight - 2) / 2;
+  const startPos = {
+    x: from.x + (props.nodeFrom.size ? props.nodeFrom.size.w : 0),
+    y:
+      from.y +
+      (props.nodeFrom.size ? props.nodeFrom.size.h : 0) -
+      (portIndex || 1) * props.portHeight +
+      offsetY,
+  };
+  let endPos = to;
+  const theme: any = React.useContext(ThemeContext);
+  const [isHovered, setIsHover] = React.useState(false);
+
+  const getMidPoint = () => {
+    if (!lineEl.current) {
+      return null;
     }
 
-    endPos = {
-      x: endPos.x - 5,
-      y: endPos.y + (props.creating ? 0 : 35),
-    };
+    const pathLength = Math.floor(lineEl.current.getTotalLength());
+    const pathMiddle = (50 * pathLength) / 100;
+    const midPoint = lineEl.current.getPointAtLength(pathMiddle);
+    return midPoint;
+  };
 
-    // implement custom path functions here
-    const points = defaultPath(startPos, endPos);
+  const midPoint = getMidPoint();
+
+  const onHover = () => {
+    setIsHover(true);
+  };
+
+  const onOut = () => {
+    setIsHover(false);
+  };
+
+  const onDelete = () => {
+    if (props.onDeleteLink) {
+      props.onDeleteLink(props.id);
+    }
+  };
+
+  if (!startPos || !endPos) return null;
+
+  if (toId === fromId) {
     return (
-      <React.Fragment>
-        <svg
-          style={{
-            overflow: "visible",
-            position: "absolute",
-            pointerEvents: "none",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            right: 0,
-            width: "100%",
-            height: "100%",
-            zIndex: isHovered || props.creating ? 500 : 0,
-          }}
-        >
-          <defs>
-            <marker
-              id={`lmark-${props.id}`}
-              viewBox="0 0 10 10"
-              refX="5"
-              refY="5"
-              markerWidth="4"
-              markerHeight="4"
-              orient="auto"
-            >
-              <path
-                d="M 0 0 L 10 5 L 0 10 z"
-                fill={
-                  isHovered
-                    ? theme.global.colors["accent-1"]
-                    : theme.global.colors.connection
-                }
-              />
-            </marker>
-          </defs>
-          <path
-            markerEnd={`url(#lmark-${props.id})`}
-            ref={lineEl}
-            d={points}
-            style={{ pointerEvents: "all" }}
-            stroke={
-              isHovered
-                ? theme.global.colors["accent-1"]
-                : theme.global.colors.connection
-            }
-            strokeWidth="4"
-            fill="none"
-            onMouseEnter={onHover}
-            onMouseLeave={onOut}
-          />
-        </svg>
-        {!props.creating && midPoint && isHovered && (
-          <DelButton
-            x={midPoint.x}
-            y={midPoint.y}
-            icon={<Unlink className="del-link-icon" />}
-            onMouseEnter={onHover}
-            onMouseLeave={onOut}
-            onClick={onDelete}
-          ></DelButton>
-        )}
-      </React.Fragment>
+      <ActionButton
+        icon={<Cycle size="24" />}
+        plain
+        bgColor="#fff"
+        fontColor="accent-1"
+        tip="remove cycle link"
+        style={{
+          position: "absolute",
+          top: startPos.y - 12,
+          left: startPos.x - 12,
+          padding: "2px",
+          zIndex: 110,
+        }}
+        onClick={onDelete}
+        size="small"
+      />
     );
-  },
-  function arePropsEqual(prevProps: ILinkProps, nextProps: ILinkProps) {
-    const equalFromPosition = isEqual(
-      prevProps.nodeFrom.position,
-      nextProps.nodeFrom.position
-    );
-    const equalFromSize = isEqual(
-      prevProps.nodeFrom.size,
-      nextProps.nodeFrom.size
-    );
-
-    const sameIndex =
-      prevProps.nodeFrom.ports[prevProps.portFrom].index ===
-      nextProps.nodeFrom.ports[nextProps.portFrom].index;
-
-    const equalTo = isEqual(prevProps.nodeTo, nextProps.nodeTo);
-    return equalFromSize && equalTo && equalFromPosition && sameIndex;
   }
-);
+
+  endPos = {
+    x: endPos.x - 5,
+    y: endPos.y + (props.creating ? 0 : 35),
+  };
+
+  // implement custom path functions here
+  const points = defaultPath(startPos, endPos);
+  return (
+    <React.Fragment>
+      <svg
+        style={{
+          overflow: "visible",
+          position: "absolute",
+          pointerEvents: "none",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: isHovered || props.creating ? 500 : 0,
+        }}
+      >
+        <defs>
+          <marker
+            id={`lmark-${props.id}`}
+            viewBox="0 0 10 10"
+            refX="5"
+            refY="5"
+            markerWidth="4"
+            markerHeight="4"
+            orient="auto"
+          >
+            <path
+              d="M 0 0 L 10 5 L 0 10 z"
+              fill={
+                isHovered
+                  ? theme.global.colors["accent-1"]
+                  : theme.global.colors.connection
+              }
+            />
+          </marker>
+        </defs>
+        <path
+          markerEnd={`url(#lmark-${props.id})`}
+          ref={lineEl}
+          d={points}
+          style={{ pointerEvents: "all" }}
+          stroke={
+            isHovered
+              ? theme.global.colors["accent-1"]
+              : theme.global.colors.connection
+          }
+          strokeWidth="4"
+          fill="none"
+          onMouseEnter={onHover}
+          onMouseLeave={onOut}
+        />
+      </svg>
+      {!props.creating && midPoint && isHovered && (
+        <DelButton
+          x={midPoint.x}
+          y={midPoint.y}
+          icon={<Unlink className="del-link-icon" />}
+          onMouseEnter={onHover}
+          onMouseLeave={onOut}
+          onClick={onDelete}
+        ></DelButton>
+      )}
+    </React.Fragment>
+  );
+};
 
 export function defaultPath(startPos: IPosition, endPos: IPosition) {
   const bezierWeight = 0.675;

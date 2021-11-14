@@ -13,15 +13,58 @@ export interface INodeDraggerProps {
   parentBoundId: string;
   cursor?: string;
   selected?: boolean;
-  onDrag: (evt: IOnDragNodeEvent) => void;
   onDragEnd: (evt: IOnDragNodeEvent) => void;
 }
 
 export function NodeDragger(props: INodeDraggerProps) {
-  const position = props.node.position;
+  const fromPropsPosition = props.node.position;
+  const [position, setPosition] = React.useState(fromPropsPosition);
+  const draggedPosition = React.useRef(position);
+  const selected = props.selected;
   const node = props.node;
+  const nodeSize = node.size;
+  const nodeId = node.id;
   const [dragging, setDragging] = React.useState(false);
   const theme: any = React.useContext(ThemeContext);
+
+  React.useEffect(() => {
+    draggedPosition.current = fromPropsPosition;
+    setPosition(fromPropsPosition);
+  }, [fromPropsPosition]);
+
+  React.useEffect(() => {
+    const multidragMovingListener = (evt: any) => {
+      if (evt.detail.shouldSkip || nodeId === evt.detail.id || !selected) {
+        return;
+      }
+      const { delta, canvasSize, multiSelectOffsets } = evt.detail;
+      const newPosition = getPositionWithParentBoundsSize(
+        canvasSize,
+        nodeSize || { h: 0, w: 0 },
+        multiSelectOffsets[`${nodeId}-drag-hat`],
+        draggedPosition.current.x + delta.x,
+        draggedPosition.current.y + delta.y
+      );
+      draggedPosition.current = newPosition;
+      document.dispatchEvent(
+        new CustomEvent("nodePositionChanged", {
+          detail: {
+            shouldSkip: true,
+            id: nodeId,
+            position: newPosition,
+          },
+        })
+      );
+      setPosition(newPosition);
+    };
+    document.addEventListener("nodePositionChanged", multidragMovingListener);
+    return () => {
+      document.removeEventListener(
+        "nodePositionChanged",
+        multidragMovingListener
+      );
+    };
+  }, [nodeId, selected, nodeSize]);
 
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const canvas: HTMLDivElement = document.getElementById(
@@ -39,6 +82,7 @@ export function NodeDragger(props: INodeDraggerProps) {
       w: canvasRect.width / scale,
       h: canvasRect.height / scale,
     };
+    const StartingDragPosition = draggedPosition.current;
     const nodeSize = { w: nodeRect.width / scale, h: nodeRect.height / scale };
     const multiSelectOffsets: any = getMultiselectionSquareRectOffsets(scale);
 
@@ -73,14 +117,27 @@ export function NodeDragger(props: INodeDraggerProps) {
         y
       );
 
-      requestAnimationFrame(() =>
-        props.onDrag({
-          node: props.node,
-          position: finalPosition,
-          canvasSize,
-          multiSelectOffsets,
-        })
-      );
+      const delta = {
+        x: finalPosition.x - draggedPosition.current.x,
+        y: finalPosition.y - draggedPosition.current.y,
+      };
+
+      draggedPosition.current = finalPosition;
+
+      requestAnimationFrame(() => {
+        document.dispatchEvent(
+          new CustomEvent("nodePositionChanged", {
+            detail: {
+              id: props.node.id,
+              position: finalPosition,
+              canvasSize,
+              multiSelectOffsets,
+              delta,
+            },
+          })
+        );
+        setPosition(finalPosition);
+      });
     };
 
     const throttledMove = (e: any) =>
@@ -92,16 +149,20 @@ export function NodeDragger(props: INodeDraggerProps) {
       setDragging(false);
       window.removeEventListener("mouseup", mouseUpHandler, false);
       window.removeEventListener("mousemove", throttledMove, true);
-      props.onDragEnd({ node, position, canvasSize, multiSelectOffsets });
+      const finalDelta = {
+        x: draggedPosition.current.x - StartingDragPosition.x,
+        y: draggedPosition.current.y - StartingDragPosition.y,
+      };
+      props.onDragEnd({
+        node: props.node,
+        position: draggedPosition.current,
+        finalDelta,
+        canvasSize,
+        multiSelectOffsets,
+      });
     };
 
     setDragging(true);
-    props.onDrag({
-      node: props.node,
-      position,
-      canvasSize,
-      multiSelectOffsets,
-    });
     window.addEventListener("mouseup", mouseUpHandler, false);
     window.addEventListener("mousemove", throttledMove, {
       capture: true,

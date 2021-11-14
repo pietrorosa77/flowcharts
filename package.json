@@ -16,34 +16,34 @@
     "build": "tsc --build \"./libBuildTsconfig.json\""
   },
   "dependencies": {
-    "use-resize-observer": "^8.0.0",
+    "lodash": "^4.17.21",
+    "nanoid": "^3.1.30",
     "react-json-view": "^1.21.3",
     "react-markdown-editor-lite": "^1.3.1",
-    "lodash": "^4.17.21",
-    "nanoid": "^3.1.30"
+    "use-resize-observer": "^8.0.0"
   },
   "peerDependencies": {
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
     "grommet": "^2.18.0",
     "grommet-icons": "^4.6.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "styled-components": "^5.3.3"
   },
   "devDependencies": {
-    "vite": "^2.6.13",
+    "@types/lodash": "4.14.176",
     "@types/node": "^12.0.0",
     "@types/react": "^17.0.34",
     "@types/react-dom": "^17.0.11",
-    "@types/lodash": "4.14.176",
     "@types/styled-components": "5.1.15",
-    "typescript": "4.4.4",
-    "vite-react-jsx": "^1.1.2",
     "@typescript-eslint/eslint-plugin": "^4.11.1",
     "@typescript-eslint/parser": "^4.11.1",
-    "vite-plugin-eslint": "1.3.0",
     "eslint": "^7.32.0",
     "eslint-plugin-react": "^7.26.1",
-    "eslint-plugin-react-hooks": "^4.2.0"
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "typescript": "4.4.4",
+    "vite": "^2.6.13",
+    "vite-plugin-eslint": "1.3.0",
+    "vite-react-jsx": "^1.1.2"
   },
   "publishConfig": {
     "@pietrorosa77:registry": "https://npm.pkg.github.com"

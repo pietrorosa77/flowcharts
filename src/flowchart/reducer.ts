@@ -1,7 +1,6 @@
 import {
   IChart,
   IOnDragNodeEvent,
-  IOnStartConnection,
   IOnNodeSelectionChanged,
   IOnAreaSelectionChanged,
   INode,
@@ -31,6 +30,8 @@ export const reducer = (
     totalActions: state.changeSummary.totalActions + 1,
     lastAction: action.type as Actions | undefined,
   };
+
+  console.log(action.type);
 
   switch (action.type) {
     case "onStartAsyncOperation":
@@ -77,18 +78,12 @@ export const reducer = (
     case "onEndConnection":
       ret = onEndConnection(state.chart, action.payload as IOnEndConnection);
       break;
-    case "onStartConnection":
-      ret = onStartConnection(
-        state.chart,
-        action.payload as IOnStartConnection
-      );
-      break;
     case "onDragNodeStop":
-      ret = onDragNodeStop(state.chart);
+      ret = onDragNodeStop(state.chart, action.payload as IOnDragNodeEvent);
       break;
-    case "onDragNode":
-      ret = onDragNode(state.chart, action.payload as IOnDragNodeEvent);
-      break;
+    // case "onDragNode":
+    //   ret = // onDragNode(state.chart, action.payload as IOnDragNodeEvent);
+    //   break;
     case "onUpdateNode":
       ret = onUpdateNode(state.chart, action.payload as INode);
       break;
@@ -204,7 +199,6 @@ export const onUpdateNode = (chart: IChart, updatedNode: INode): IChart => {
 
   const retChart = {
     ...chart,
-    newLink: undefined,
     nodes: {
       ...chart.nodes,
       [`${mergedNode.id}`]: mergedNode,
@@ -242,7 +236,6 @@ export const onNodeSizeChanged = (
 
   return {
     ...chart,
-    newLink: undefined,
     nodes: {
       ...chart.nodes,
       [`${evt.id}`]: updtNode,
@@ -250,73 +243,45 @@ export const onNodeSizeChanged = (
   };
 };
 
-export const onDragNode = (chart: IChart, evt: IOnDragNodeEvent): IChart => {
-  const nodechart = chart.nodes[evt.node.id];
-  if (nodechart) {
-    const delta = {
-      x: evt.position.x - nodechart.position.x,
-      y: evt.position.y - nodechart.position.y,
-    };
-
-    const isNodeSelected = chart.selected[nodechart.id];
-
-    // multidrag
-    const selectedIds = Object.keys(chart.selected).filter(
-      (k) => k !== nodechart.id && chart.selected[k] === true
+export const onDragNodeStop = (
+  chart: IChart,
+  evt: IOnDragNodeEvent
+): IChart => {
+  const { finalDelta, canvasSize, multiSelectOffsets, node: leadNode } = evt;
+  const selectedIds = Object.keys(chart.selected).filter(
+    (k) => k !== leadNode.id && chart.selected[k] === true
+  );
+  const alsoMoved = selectedIds.reduce((acc, id) => {
+    const nodePos = getPositionWithParentBoundsSize(
+      canvasSize,
+      chart.nodes[id].size || { h: 0, w: 0 },
+      multiSelectOffsets[`${id}-drag-hat`],
+      chart.nodes[id].position.x + finalDelta.x,
+      chart.nodes[id].position.y + finalDelta.y
     );
 
-    // move other selected nodes only if current is selected
-    const alsoMoved = isNodeSelected
-      ? selectedIds.reduce((acc, id) => {
-          const nodePos = getPositionWithParentBoundsSize(
-            evt.canvasSize,
-            chart.nodes[id].size || { h: 0, w: 0 },
-            evt.multiSelectOffsets[`${id}-drag-hat`],
-            chart.nodes[id].position.x + delta.x,
-            chart.nodes[id].position.y + delta.y
-          );
-
-          return {
-            ...acc,
-            [`${id}`]: {
-              ...chart.nodes[id],
-              position: nodePos,
-            },
-          };
-        }, {})
-      : {};
-
     return {
-      ...chart,
-      newLink: undefined,
-      nodes: {
-        ...chart.nodes,
-        ...alsoMoved,
-        [`${evt.node.id}`]: {
-          ...nodechart,
-          position: {
-            x: evt.position.x,
-            y: evt.position.y,
-          },
-        },
+      ...acc,
+      [`${id}`]: {
+        ...chart.nodes[id],
+        position: nodePos,
       },
     };
-  }
-  return chart;
-};
+  }, {});
 
-export const onDragNodeStop = (chart: IChart): IChart => ({
-  ...chart,
-  newLink: undefined,
-});
-
-export const onStartConnection = (
-  chart: IChart,
-  evt: IOnStartConnection
-): IChart => {
   return {
     ...chart,
-    newLink: evt.newLink,
+    nodes: {
+      ...chart.nodes,
+      ...alsoMoved,
+      [`${leadNode.id}`]: {
+        ...chart.nodes[evt.node.id],
+        position: {
+          x: evt.position.x,
+          y: evt.position.y,
+        },
+      },
+    },
   };
 };
 
@@ -334,7 +299,7 @@ export const onEndConnection = (
     !nodeTo ||
     !isValidLink(nodeTo.id, evt.portLinks, creatingLink.from.nodeId)
   ) {
-    return { ...chart, newLink: undefined };
+    return { ...chart };
   }
 
   const linkId = nanoid();
@@ -353,7 +318,6 @@ export const onEndConnection = (
     ...chart,
     links,
     paths,
-    newLink: undefined,
   };
 };
 
@@ -366,7 +330,6 @@ export const onDeleteLink = (chart: IChart, id: string): IChart => {
     ...chart,
     links,
     paths,
-    newLink: undefined,
   };
 };
 
@@ -409,7 +372,6 @@ export const onNodeSelectionChanged = (
   return {
     ...chart,
     selected,
-    newLink: undefined,
   };
 };
 
@@ -424,17 +386,19 @@ export const onAreaSelectionChanged = (
   return {
     ...chart,
     selected,
-    newLink: undefined,
   };
 };
 
 export const onNodeAdded = (chart: IChart, node: INode): IChart => {
   return {
     ...chart,
-    newLink: undefined,
     nodes: {
       ...chart.nodes,
       [`${node.id}`]: node,
+    },
+    selected: {
+      ...chart.selected,
+      [`${node.id}`]: false,
     },
   };
 };

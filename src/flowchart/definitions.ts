@@ -15,7 +15,6 @@ export interface IChart {
   selected: {
     [id: string]: boolean;
   };
-  newLink: ILink | undefined;
   paths: { [id: string]: string };
 }
 
@@ -80,6 +79,10 @@ export interface IOnDragNodeEvent {
       offsetBottom: number;
     };
   };
+  finalDelta: {
+    x: number;
+    y: number;
+  };
 }
 
 export interface IOnStartConnection {
@@ -113,10 +116,8 @@ export interface IFloatingPosition {
 }
 
 export type Actions =
-  | "onDragNode"
   | "onDragNodeStop"
   | "onPortPositioningChange"
-  | "onStartConnection"
   | "onEndConnection"
   | "onDeleteLink"
   | "onDeleteNodes"
