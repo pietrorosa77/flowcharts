@@ -1,5 +1,4 @@
 import * as React from "react";
-import { throttle } from "lodash";
 
 export interface IPanZoomLayerProps {
   height?: string;
@@ -28,13 +27,12 @@ export function ZoomLayer(props: IPanZoomLayerProps) {
     props.y || 0,
   ]);
 
-  const [origin, setTransformOrigin] = React.useState<string | undefined>();
-
   const panX = matrix[4];
   const panY = matrix[5];
   const { dragging, dx, dy, x, y } = dragData;
   const container = React.useRef<HTMLDivElement>(null);
   const element = React.useRef<HTMLDivElement>(null);
+  const [transition, setTransition] = React.useState("none");
 
   React.useEffect(() => {
     window.addEventListener("mouseup", onMouseUp, {
@@ -59,14 +57,7 @@ export function ZoomLayer(props: IPanZoomLayerProps) {
   }, [dragging, dx, dy, x, y, props.zoom]);
 
   React.useEffect(() => {
-    const scale = props.zoom || 1;
-    const containerRect = container.current?.getBoundingClientRect();
-    const x = (containerRect?.left || 0) / 2;
-    const y = (containerRect?.top || 0) / 2;
-    const newOriginX = x / scale;
-    const newOriginY = y / scale;
-
-    setTransformOrigin(`${newOriginX}px ${newOriginY}px`);
+    setTransition("all 0.2s ease-in-out");
     setMatrix([props.zoom || 1, 0, 0, props.zoom || 1, matrix[4], matrix[5]]);
     // eslint-disable-next-line
   }, [props.zoom]);
@@ -91,6 +82,7 @@ export function ZoomLayer(props: IPanZoomLayerProps) {
       return;
     }
 
+    setTransition("none");
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
     e.preventDefault();
@@ -120,7 +112,7 @@ export function ZoomLayer(props: IPanZoomLayerProps) {
     setMatrix(() => newMatrix);
   };
 
-  const throttledMove = throttle(mouseMove, 60, { trailing: true });
+  const throttledMove = (e: any) => requestAnimationFrame(() => mouseMove(e));
 
   const onMouseUp = () => {
     if (!dragData.dragging) {
@@ -153,7 +145,8 @@ export function ZoomLayer(props: IPanZoomLayerProps) {
         ref={element}
         style={{
           transform: `matrix(${matrix.toString()})`,
-          transformOrigin: origin,
+          transformOrigin: "top",
+          transition,
         }}
       >
         {props.children}

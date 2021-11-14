@@ -95,7 +95,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
       <ActionButton
         plain
         noOutline
-        tip={panZoomInfo.scale >= maxZoom ? undefined : "Zoom in"}
+        tip={panZoomInfo.scale > maxZoom ? undefined : "Zoom in"}
         icon={<ZoomIn />}
         onClick={onZoomIn}
         size="small"
@@ -110,7 +110,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
         icon={<ZoomOut />}
         onClick={onZoomOut}
         size="small"
-        disabled={panZoomInfo.scale <= minZoom}
+        disabled={Math.round(panZoomInfo.scale * 100) / 100 <= minZoom}
         bgColor="transparent"
         style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
       />

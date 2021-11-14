@@ -151,7 +151,7 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
   const onZoomOut = () => {
     setPanZoomData({
       ...panZoomData,
-      scale: panZoomData.scale - 0.2,
+      scale: panZoomData.scale - 0.1,
     });
   };
 

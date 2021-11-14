@@ -45,8 +45,8 @@ export const EditorTheme: FlowchartTheme = deepMerge(base, {
     theme: "ocean" as ThemeKeys,
   },
   diagram: {
-    canvasWidth: 2000,
-    canvasHeight: 2000,
+    canvasWidth: 3000,
+    canvasHeight: 3000,
   },
   tip: {
     drop: {
