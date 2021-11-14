@@ -82,7 +82,7 @@ export class UndoRedoManager {
         };
         break;
     }
-    console.log("undred manager reducer ", ret);
+
     return ret;
   };
 
@@ -91,7 +91,6 @@ export class UndoRedoManager {
       type: "save",
       payload: currentState,
     }) as UndoRedoState;
-    console.log("THIS.CURRENT", this.current);
   }
 
   canUndo(): boolean {

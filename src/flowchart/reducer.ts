@@ -31,8 +31,6 @@ export const reducer = (
     lastAction: action.type as Actions | undefined,
   };
 
-  console.log(action.type);
-
   switch (action.type) {
     case "onStartAsyncOperation":
       uiState = {
@@ -421,7 +419,7 @@ export const isValidLink = (
   links: ILink[],
   fromNodeId: string
 ) => {
-  console.log("from node", fromNodeId);
+
   return (
     //nodeToId !== fromNodeId &&
     links.filter((l) => l.to === nodeToId).length === 0
