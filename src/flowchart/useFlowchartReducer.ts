@@ -45,7 +45,7 @@ export const useFlowchartReducer = (
 
     onStateChanged(appState, appState.changeSummary.lastAction as Actions);
     // eslint-disable-next-line
-  }, [appState.changeSummary.totalActions, onStateChanged]);
+  }, [appState.changeSummary.totalActions]);
 
   return [appState, wrappedDispatch];
 };

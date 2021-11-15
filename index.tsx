@@ -27,6 +27,21 @@ const availableNodes: ExtendedNode[] = [
   },
 ];
 
+const onDiagramChanged = (state: any, type: any) => {
+  const actions = [
+    "onUpdateNode",
+    "onNodeAdded",
+    "onDeleteNodes",
+    "onUndo",
+    "onRedo",
+  ];
+  if (actions.includes(type)) {
+    console.log("test");
+    // const updtVariables = getAllVariables(state.chart);
+    // setVariables(updtVariables);
+  }
+};
+
 ReactDOM.render(
   <React.StrictMode>
     <FlowDiagramEditor
@@ -37,6 +52,7 @@ ReactDOM.render(
       sidebarInitiallyOpened
       sidebarButtons={availableNodes}
       name="My flowchart"
+      onDiagramChanged={onDiagramChanged}
       // canvasContainerBgColor="blue"
       // canvasBackground={{
       //   height: 5000,
