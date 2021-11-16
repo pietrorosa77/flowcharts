@@ -39,7 +39,12 @@ const GlobalStyle = createGlobalStyle`
 export interface IFlowChartProps {
   chart: IChart;
   name: string;
-  sidebarButtons: ExtendedNode[];
+  sidebarButtons: ExtendedNode[] | {
+    id: string;
+    title: string;
+    icon: string;
+    getNode: () => ExtendedNode;
+}[];
   width?: string;
   height?: string;
   theme?: FlowchartTheme;
