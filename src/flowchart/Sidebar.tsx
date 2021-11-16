@@ -57,7 +57,9 @@ export const Sidebar = ({ opened, onClose, buttons, width }: ISidebarProps) => {
               color="status-disabled"
               bgColor="bars"
               accentColor="accent-1"
-              onDragStart={(event: any) => onDragStart(event, getNode(btn))}
+              onDragStart={(event: any) =>
+                onDragStart(event, btn.getNode ? btn.getNode() : getNode(btn))
+              }
               onDragEnd={(event: any) => onDragEnd(event)}
               opacity={0.7}
             />
