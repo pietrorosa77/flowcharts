@@ -72,6 +72,7 @@ export const getInitialSchema = (): IChart => {
           x: 300,
           y: 100,
         },
+        preventRemoval: true,
         ports: {
           port1: {
             id: "port1",
