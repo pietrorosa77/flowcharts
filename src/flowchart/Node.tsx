@@ -221,7 +221,17 @@ export const NodeHeader = (props: INodeHeaderProps) => {
           />
         </Box>
         <Box style={{ flex: 1 }}>
-          <Text>{title}</Text>
+          <Text
+            style={{
+              textOverflow: "ellipsis",
+              display: "inline-block",
+              maxWidth: "145px",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {title}
+          </Text>
         </Box>
         <Box direction="row-reverse" gap="xsmall">
           <ActionButton
