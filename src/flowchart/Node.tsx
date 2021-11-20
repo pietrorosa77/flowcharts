@@ -10,6 +10,7 @@ import {
   IOnNodeSelectionChanged,
   IOnNodeSizeChanged,
   IPort,
+  ExtendedNode,
 } from "./definitions";
 import { Box, Text, CheckBox, ThemeContext } from "grommet";
 import { NodeDragger } from "./NodeDragger";
@@ -20,7 +21,7 @@ import useResizeObserver from "use-resize-observer";
 import { ActionButton } from "./ActionButton";
 
 export interface INodeProps {
-  node: INode;
+  node: ExtendedNode;
   links: Array<ILink>;
   onDragNodeStop: (evt: IOnDragNodeEvent) => void;
   onStartConnection: (evt: IOnStartConnection) => void;
@@ -115,6 +116,7 @@ export const Node = React.memo(
           <NodeHeader
             title={node.title}
             checked={checked}
+            preventRemoval={node.preventRemoval}
             onDelete={onNodeDelete}
             onSettings={onNodeSettings}
             onCheckedChange={setCheckedCB}
@@ -193,10 +195,11 @@ interface INodeHeaderProps {
   title: string;
   onDelete: () => void;
   onSettings: () => void;
+  preventRemoval? : boolean;
 }
 
 export const NodeHeader = (props: INodeHeaderProps) => {
-  const { checked, onCheckedChange, title, onDelete, onSettings } = props;
+  const { checked, onCheckedChange, title, onDelete, onSettings, preventRemoval } = props;
   return (
     <Box
       round={{ corner: "top", size: "small" }}
@@ -241,13 +244,13 @@ export const NodeHeader = (props: INodeHeaderProps) => {
             onClick={onSettings}
             size="small"
           />
-          <ActionButton
+          {!preventRemoval && <ActionButton
             plain
             style={{ padding: "2px" }}
             icon={<Trash size="20" />}
             onClick={onDelete}
             size="small"
-          />
+          />}
         </Box>
       </Box>
     </Box>

@@ -10,7 +10,7 @@ import { StyledButton } from "./ActionButton";
 export interface ISidebarProps {
   opened?: boolean;
   onClose: () => void;
-  buttons: ExtendedNode[];
+  buttons: ExtendedNode[] | {id: string; title: string; icon: string; getNode:() => ExtendedNode}[];
   width: string;
 }
 
@@ -58,7 +58,7 @@ export const Sidebar = ({ opened, onClose, buttons, width }: ISidebarProps) => {
               bgColor="bars"
               accentColor="accent-1"
               onDragStart={(event: any) =>
-                onDragStart(event, btn.getNode ? btn.getNode() : getNode(btn))
+                onDragStart(event, btn.getNode ? btn.getNode() : getNode(btn as ExtendedNode))
               }
               onDragEnd={(event: any) => onDragEnd(event)}
               opacity={0.7}

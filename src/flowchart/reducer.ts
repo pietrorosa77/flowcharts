@@ -263,7 +263,7 @@ export const onDeleteNodes = (chart: IChart, selectedNodes: Array<string>) => {
     connecting: undefined,
   };
 
-  const nodeIds = selectedNodes.filter((k) => chart.nodes[k]);
+  const nodeIds = selectedNodes.filter((k) => chart.nodes[k] && !chart.nodes[k].preventRemoval);
 
   const links = Object.keys(chart.links).filter((k) => {
     const l = chart.links[k];
