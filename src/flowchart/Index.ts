@@ -8,12 +8,7 @@ import { MarkdownEditor } from "./default-editors/DefaultContentEditor";
 import DefaultPortsEditor from "./default-editors/DefaultPortEditor";
 import DefaultPropertyPanelEditor from "./default-editors/DefaultPropertyPanelEditor";
 import { CollapsibleLeftPanel } from "./CollapsibleLeftPanel";
-import {
-  ActionButton,
-  StyledBox,
-  StyledButton,
-  ConfirmButton,
-} from "./ActionButton";
+import { ActionButton, StyledBox, StyledButton } from "./ActionButton";
 
 export {
   FlowChart,
@@ -29,6 +24,5 @@ export {
   ActionButton,
   StyledBox,
   StyledButton,
-  ConfirmButton,
   ReactJsonView,
 };
