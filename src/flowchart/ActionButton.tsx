@@ -65,12 +65,14 @@ export const StyledButton = styled(Button)<{
   transform: translateZ(0);
   font-smoothing: antialiased !important;
   background-color: ${(props) =>
-    props.theme.global.colors[props.bgColor || "brand"]};
+    props.theme.global.colors[
+      props.disabled ? "status-disabled" : props.bgColor || "brand"
+    ]};
   border: 2px solid
     ${(props) => props.theme.global.colors[props.color || "light-6"]};
   border-radius: ${(props) => props.borderRadius || "6px"};
   color: ${(props) => props.theme.global.colors[props.color || "light-6"]};
-  box-shadow: "none";
+  box-shadow: none;
   opacity: ${(props) => props.opacity || 1};
   svg {
     fill: ${(props) => props.theme.global.colors[props.color || "light-6"]};
@@ -84,32 +86,32 @@ export const StyledButton = styled(Button)<{
 
   &.dragging,
   &.selected,
-  &:hover {
+  &:hover 
+  ${(props) =>
+    props.disabled
+      ? undefined
+      : `{
     -webkit-backface-visibility: hidden;
     -webkit-transform: translateZ(0) scale(1, 1);
     transform: translateZ(0);
     font-smoothing: antialiased !important;
     box-shadow: 0 0 4px 4px
-      ${(props) => props.theme.global.colors[props.accentColor || "white"]} !important;
+      ${props.theme.global.colors[props.accentColor || "white"]} !important;
     border: 2px solid
-      ${(props) => props.theme.global.colors[props.accentColor || "white"]};
-    color: ${(props) =>
-      props.theme.global.colors[props.accentColor || "white"]};
+      ${props.theme.global.colors[props.accentColor || "white"]};
+    color: ${props.theme.global.colors[props.accentColor || "white"]};
     opacity: 1;
-    transform: scale(${(props) => props.hoverScale || 1}) translate3d(0, 0, 0);
+    transform: scale(${props.hoverScale || 1}) translate3d(0, 0, 0);
     backface-visibility: hidden;
     transition: 0.3s;
-    background-color: ${(props) =>
-      props.theme.global.colors[
-        props.hoverBgColor || props.bgColor || "brand"
-      ]};
+    background-color: ${
+      props.theme.global.colors[props.hoverBgColor || props.bgColor || "brand"]
+    };
     svg {
-      fill: ${(props) =>
-        props.theme.global.colors[props.accentColor || "white"]};
-      stroke: ${(props) =>
-        props.theme.global.colors[props.accentColor || "white"]};
+      fill: ${props.theme.global.colors[props.accentColor || "white"]};
+      stroke: ${props.theme.global.colors[props.accentColor || "white"]};
     }
-  }
+  }`}
 `;
 
 interface IStyledBoxButtonProps {
