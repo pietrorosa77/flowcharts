@@ -1,6 +1,4 @@
-import { Box, Button, Heading, Layer, Paragraph } from "grommet";
-import { FormCheckmark, FormClose } from "grommet-icons";
-import React from "react";
+import { Box, Button } from "grommet";
 import styled from "styled-components";
 
 export const ActionButton = styled(Button)<{
