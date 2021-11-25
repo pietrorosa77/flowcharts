@@ -28,6 +28,10 @@ import { cloneDeep } from "lodash";
 import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
+* {
+  font-family: ${(props: any) => props.theme.global.font?.family || "unset"};
+    font-size: ${(props: any) => props.theme.global.font?.size || "unset"};
+}
   .flowDiagramNodeDraggerHatBorders {
     &:hover {
       border-color: ${(props) =>
@@ -39,12 +43,14 @@ const GlobalStyle = createGlobalStyle`
 export interface IFlowChartProps {
   chart: IChart;
   name: string;
-  sidebarButtons: ExtendedNode[] | {
-    id: string;
-    title: string;
-    icon: string;
-    getNode: () => ExtendedNode;
-}[];
+  sidebarButtons:
+    | ExtendedNode[]
+    | {
+        id: string;
+        title: string;
+        icon: string;
+        getNode: () => ExtendedNode;
+      }[];
   width?: string;
   height?: string;
   theme?: FlowchartTheme;
