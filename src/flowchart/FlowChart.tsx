@@ -28,10 +28,13 @@ import { cloneDeep } from "lodash";
 import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
-* {
-  font-family: ${(props: any) => props.theme.global.font?.family || "unset"};
-    font-size: ${(props: any) => props.theme.global.font?.size || "unset"};
-}
+  .dumbot-flowchart-main {
+    * {
+      font-family: ${(props: any) =>
+        props.theme.global.font?.family || "unset"};
+        font-size: ${(props: any) => props.theme.global.font?.size || "unset"};
+    }
+  }
   .flowDiagramNodeDraggerHatBorders {
     &:hover {
       border-color: ${(props) =>
@@ -121,6 +124,7 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
 
   React.useEffect(() => {
     setTheme(getTheme(props.theme));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.theme]);
 
   const onDiagramEvent = (type: Actions, payload: DiagramEventArgs) => {
@@ -210,6 +214,7 @@ export default function FlowDiagramEditor(props: IFlowChartProps) {
   return (
     <Grommet
       theme={theme}
+      className="dumbot-flowchart-main"
       full
       style={{
         overflow: "hidden",
