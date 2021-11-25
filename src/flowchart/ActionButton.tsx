@@ -130,7 +130,7 @@ export const StyledBox = styled(Box)<IStyledBoxButtonProps>`
   align-self: center;
   box-sizing: border-box;
   min-width: 120px;
-  font-size: ${(props) => props.fontSize || "18px"};
+  font-size: ${(props) => props.fontSize || "inherit"};
   line-height: 24px;
   text-decoration: none !important;
   display: inline-block;
