@@ -64,6 +64,7 @@ export const StyledButton = styled(Button)<{
   -webkit-transform: translateZ(0) scale(1, 1);
   transform: translateZ(0);
   font-smoothing: antialiased !important;
+  font-size: inherit;
   background-color: ${(props) =>
     props.theme.global.colors[
       props.disabled ? "status-disabled" : props.bgColor || "brand"
@@ -82,6 +83,7 @@ export const StyledButton = styled(Button)<{
   a {
     color: inherit;
     text-decoration: none;
+    font-size: inherit;
   }
 
   &.dragging,
@@ -104,6 +106,7 @@ export const StyledButton = styled(Button)<{
     transform: scale(${props.hoverScale || 1}) translate3d(0, 0, 0);
     backface-visibility: hidden;
     transition: 0.3s;
+    font-size: inherit;
     background-color: ${
       props.theme.global.colors[props.hoverBgColor || props.bgColor || "brand"]
     };
@@ -161,6 +164,7 @@ export const StyledBox = styled(Box)<IStyledBoxButtonProps>`
   &.dragging,
   &.selected,
   &:hover {
+    font-size: inherit;
     -webkit-backface-visibility: hidden;
     -webkit-transform: translateZ(0) scale(1, 1);
     transform: translateZ(0);
