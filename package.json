@@ -1,6 +1,6 @@
 {
   "name": "@pietrorosa77/flowcharts",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "build flowcharts with React and Grommet",
   "license": "MIT",
   "main": "lib/Index.js",

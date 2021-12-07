@@ -32,10 +32,17 @@ const GlobalStyle = createGlobalStyle`
     * {
       font-family: ${(props: any) =>
         props.theme.global.font?.family || "unset"};
-        font-size: ${(props: any) => props.theme.global.font?.size || "unset"};
     }
   }
+  .flowDiagramNodeContainer {
+    * {
+    font-size: ${(props: any) =>
+      props.theme.global.font?.size || "unset"} !important;
+    }
+
+  }
   .flowDiagramNodeDraggerHatBorders {
+
     &:hover {
       border-color: ${(props) =>
         (props.theme as any).global.colors["accent-1"]} !important;
