@@ -74,6 +74,7 @@ export function MarkdownEditor(props: IMarkdownEditorProps) {
             "block-quote",
             "block-wrap",
             "block-code-inline",
+            "block-code-block",
             "table",
             "image",
             "link",
@@ -86,8 +87,10 @@ export function MarkdownEditor(props: IMarkdownEditorProps) {
           getNodeRenderer({ ...node, content }, props.renderNode)
         }
         config={{
-          view: { menu: true, md: true, html: true },
+          view: { menu: true, md: true, html: false },
+          canView: { html: true, md: true, both: false },
         }}
+        htmlClass="dumbot-flowchart-preview"
         onChange={(data: { text: string }) =>
           props.onContentChange({ content: data.text })
         }
