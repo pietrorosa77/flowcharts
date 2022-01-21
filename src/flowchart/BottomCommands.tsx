@@ -1,10 +1,9 @@
 import React from "react";
 import { ZoomIn, ZoomOut, View, Undo, Redo, Trash, Apps } from "grommet-icons";
 import { debounce } from "lodash";
-import DiagramContext from "./Context";
-import { IChart, IToggleSidebarEvent } from "./definitions";
+import { IChart, IPanZoomInfo, IToggleSidebarEvent } from "./definitions";
 import { Box } from "grommet";
-import { DispatcherContext } from "./reducer";
+import { EventBusContext } from "./eventBus";
 
 interface BottomCommandsProps {
   canUndo: boolean;
@@ -13,12 +12,13 @@ interface BottomCommandsProps {
   minZoom: number;
   chart: IChart;
   sidebarOpened?: boolean;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onZoomReset: () => void;
+  onZoomIn: (scale: number) => void;
+  onZoomOut: (scale: number) => void;
+  onZoomReset: (scale: number) => void;
   onUndo: () => void;
   onRedo: () => void;
   onDeleteNodes: (nodeIds: Array<string>) => void;
+  panZoomInfo: IPanZoomInfo;
 }
 
 const btnStyle: React.CSSProperties = {
@@ -43,11 +43,11 @@ export const BottomCommands = (props: BottomCommandsProps) => {
   } = props;
 
   const [opened, setOpened] = React.useState(sidebarOpened || false);
-  const { dispatcher: dispatch, bus } = React.useContext(DispatcherContext);
+  const bus = React.useContext(EventBusContext);
   const nodeSelected = Object.keys(chart.selected).filter(
     (k) => chart.selected[k]
   );
-  const panZoomInfo = React.useContext(DiagramContext);
+  const panZoomInfo = props.panZoomInfo;
   const debounceUndo = React.useRef(debounce(onUndo, 80)).current;
   const debounceRedo = React.useRef(debounce(onRedo, 80)).current;
 
@@ -67,8 +67,25 @@ export const BottomCommands = (props: BottomCommandsProps) => {
   };
 
   const onToggleSidebar = () => {
-    dispatch({ type: "evt-toggleSidebar", payload: { opened: !opened } });
+    bus.emit("evt-toggleSidebar", { opened: !opened });
     setOpened(!opened);
+  };
+
+  const onZoomInInternal = () => {
+    const scale = panZoomInfo.scale + 0.2;
+    bus.storeDiagramZoomScale(scale);
+    onZoomIn(scale);
+  };
+
+  const onZoomOutInternal = () => {
+    const scale = panZoomInfo.scale - 0.1;
+    bus.storeDiagramZoomScale(scale);
+    onZoomOut(scale);
+  };
+
+  const onZoomResetInternal = () => {
+    bus.storeDiagramZoomScale(1);
+    onZoomReset(1);
   };
 
   return (
@@ -94,7 +111,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
       />
       <View
         role="button"
-        onClick={onZoomReset}
+        onClick={onZoomResetInternal}
         className={`flowDiagramButtonBarAction ${
           panZoomInfo.scale === 1 && panZoomInfo.x === 0 && panZoomInfo.y === 0
             ? "inactive"
@@ -105,7 +122,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
       />
       <ZoomIn
         role="button"
-        onClick={onZoomIn}
+        onClick={onZoomInInternal}
         className={`flowDiagramButtonBarAction ${
           panZoomInfo.scale >= maxZoom ? "inactive" : "active"
         }`}
@@ -115,7 +132,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
 
       <ZoomOut
         role="button"
-        onClick={onZoomOut}
+        onClick={onZoomOutInternal}
         className={`flowDiagramButtonBarAction ${
           Math.round(panZoomInfo.scale * 100) / 100 <= minZoom
             ? "inactive"

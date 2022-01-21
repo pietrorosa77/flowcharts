@@ -6,7 +6,7 @@ import { ExtendedNode, INode, IToggleSidebarEvent } from "./definitions";
 import { nanoid } from "nanoid";
 import { CollapsibleLeftPanel } from "./CollapsibleLeftPanel";
 import { StyledButton } from "./ActionButton";
-import { DispatcherContext } from "./reducer";
+import { EventBusContext } from "./eventBus";
 
 export interface ISidebarProps {
   initiallyOpened?: boolean;
@@ -29,7 +29,7 @@ const getNode = (node: ExtendedNode): ExtendedNode => {
 };
 
 export const Sidebar = ({ initiallyOpened, buttons, width }: ISidebarProps) => {
-  const { dispatcher: dispatch, bus } = React.useContext(DispatcherContext);
+  const bus = React.useContext(EventBusContext);
   const [opened, setOpened] = React.useState(initiallyOpened);
 
   React.useEffect(() => {
@@ -53,7 +53,7 @@ export const Sidebar = ({ initiallyOpened, buttons, width }: ISidebarProps) => {
 
   const onClose = () => {
     setOpened(false);
-    dispatch({ type: "evt-toggleSidebar", payload: { opened: false } });
+    bus.emit("evt-toggleSidebar", { opened: false });
   };
 
   const onDragEnd = (event: any) => {

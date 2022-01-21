@@ -1,5 +1,4 @@
 import * as React from "react";
-import DiagramContext from "./Context";
 import { NodePort } from "./Port";
 import {
   INode,
@@ -38,7 +37,6 @@ export interface INodeProps {
 export const Node = React.memo(
   function NodeInner(props: INodeProps) {
     const node = props.node;
-    const context = React.useContext(DiagramContext);
     const theme: any = React.useContext(ThemeContext);
     const [checked, setChecked] = React.useState(props.selected);
 
@@ -84,7 +82,6 @@ export const Node = React.memo(
 
     return (
       <NodeDragger
-        scale={context.scale}
         node={props.node}
         selected={props.selected}
         parentBoundId={props.canvasId}

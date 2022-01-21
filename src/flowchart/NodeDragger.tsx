@@ -10,12 +10,11 @@ import {
   IPosition,
 } from "./definitions";
 import { ThemeContext } from "grommet";
-import { DispatcherContext } from "./reducer";
+import { EventBusContext } from "./eventBus";
 
 export interface INodeDraggerProps {
   children: any;
   node: INode;
-  scale: number;
   parentBoundId: string;
   cursor?: string;
   selected?: boolean;
@@ -26,7 +25,7 @@ export function NodeDragger(props: INodeDraggerProps) {
   const fromPropsPosition = props.node.position;
   const draggedPosition = React.useRef(fromPropsPosition);
   const theme: any = React.useContext(ThemeContext);
-  const { dispatcher: dispatch, bus } = React.useContext(DispatcherContext);
+  const bus = React.useContext(EventBusContext);
   const node = props.node;
   const bordersStyle = React.useRef<React.CSSProperties>({
     borderRadius: "12px",
@@ -70,14 +69,11 @@ export function NodeDragger(props: INodeDraggerProps) {
         draggedPosition.current.y + delta.y
       );
       draggedPosition.current = newPosition;
-      dispatch({
-        type: "evt-nodedrag",
-        payload: {
-          shouldSkip: true,
-          id: nodeId,
-          position: newPosition,
-          multi: true,
-        } as any,
+      bus.emit("evt-nodedrag", {
+        shouldSkip: true,
+        id: nodeId,
+        position: newPosition,
+        multi: true,
       });
 
       updateVisuals(newPosition, true);
@@ -111,7 +107,7 @@ export function NodeDragger(props: INodeDraggerProps) {
 
     const canvasRect = canvas.getBoundingClientRect();
     const nodeRect = hatRef.current?.getBoundingClientRect() as DOMRect;
-    const scale: number = props.scale || 1;
+    const scale: number = bus.getDiagramZoomScale()|| 1;
     const canvasSize = {
       w: canvasRect.width / scale,
       h: canvasRect.height / scale,
@@ -158,16 +154,13 @@ export function NodeDragger(props: INodeDraggerProps) {
 
       draggedPosition.current = finalPosition;
       updateVisuals(finalPosition, true);
-      dispatch({
-        type: "evt-nodedrag",
-        payload: {
-          id: props.node.id,
-          position: finalPosition,
-          canvasSize,
-          multiSelectOffsets,
-          delta,
-          multi: selected,
-        } as any,
+      bus.emit("evt-nodedrag", {
+        id: props.node.id,
+        position: finalPosition,
+        canvasSize,
+        multiSelectOffsets,
+        delta,
+        multi: selected,
       });
     };
 

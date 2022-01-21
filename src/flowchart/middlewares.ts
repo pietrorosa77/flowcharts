@@ -35,22 +35,3 @@ export function thunkMiddleware(store: ChartStore) {
     return next(action);
   };
 }
-
-export function eventBusMiddleware(store: ChartStore) {
-  return (next: ChartDispatch) => (action: ChartAction) => {
-    const type = (action as SimpleChartAction).type as ChartEvents;
-    if (type.startsWith("evt-")) {
-      return store
-        .getEventBus()
-        .emit(type, (action as SimpleChartAction).payload);
-    }
-    const prevState = store.getState();
-    // Otherwise, pass the action down the middleware chain as usual
-    next(action);
-    store.getEventBus().emit("evt-stateChanged", {
-      prev: prevState,
-      next: store.getState(),
-      action,
-    });
-  };
-}

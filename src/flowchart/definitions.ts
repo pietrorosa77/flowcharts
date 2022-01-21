@@ -59,7 +59,7 @@ export interface IConfig {
   [key: string]: any;
 }
 
-export interface IDiagramContext {
+export interface IPanZoomInfo {
   x: number;
   y: number;
   scale: number;
@@ -150,6 +150,9 @@ export interface IChartEventBus {
   ) => void;
 
   emit: (type: ChartEvents, data: any) => void;
+
+  storeDiagramZoomScale: (scale: number) => void;
+  getDiagramZoomScale: () => number;
 }
 export type Actions =
   | "onDragNodeStop"

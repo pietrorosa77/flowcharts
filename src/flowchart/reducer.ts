@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { createContext, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Actions,
   ChartDispatch,
@@ -23,11 +23,6 @@ import { UndoRedoManager } from "./undo-redo";
 import { getPositionWithParentBoundsSize } from "./utils";
 
 let history: UndoRedoManager;
-
-export const DispatcherContext: React.Context<{
-  dispatcher: ChartDispatch;
-  bus: IChartEventBus;
-}> = createContext<any>(null);
 
 export function useChartReducer(
   reducer: (

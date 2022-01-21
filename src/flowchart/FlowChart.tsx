@@ -18,24 +18,15 @@ import {
   SimpleChartAction,
 } from "./definitions";
 import { Box, Grommet } from "grommet";
-import {
-  createReducer,
-  DispatcherContext,
-  getInitialState,
-  useChartReducer,
-} from "./reducer";
+import { createReducer, getInitialState, useChartReducer } from "./reducer";
 import { Sidebar } from "./Sidebar";
 import { PropertyPanel } from "./PropertyPanel";
 import { EditorTheme, FlowchartTheme } from "./defaultTheme";
 import { deepMerge } from "grommet/utils";
 import { cloneDeep } from "lodash";
 import { createGlobalStyle } from "styled-components";
-import { useEventBus } from "./eventBus";
-import {
-  eventBusMiddleware,
-  logMiddleware,
-  thunkMiddleware,
-} from "./middlewares";
+import { EventBusContext, createBus } from "./eventBus";
+import { logMiddleware, thunkMiddleware } from "./middlewares";
 
 interface IFlowChartBaseProps {
   sidebarButtons:
@@ -122,10 +113,11 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
+const ChartEventBus = createBus();
+
 function InnerFlowChart(props: IInnerChartProps) {
   const [panelSettings, setPanelSettings] = React.useState<ExtendedNode>();
 
-  const ChartEventBus = useEventBus();
   const [appState, dispatch] = useChartReducer(
     props.reducer,
     props.initialState,
@@ -187,9 +179,7 @@ function InnerFlowChart(props: IInnerChartProps) {
       }}
     >
       <GlobalStyle />
-      <DispatcherContext.Provider
-        value={{ dispatcher: dispatch, bus: ChartEventBus }}
-      >
+      <EventBusContext.Provider value={ChartEventBus}>
         <Box
           direction="row"
           style={{ touchAction: "none", position: "relative" }}
@@ -237,7 +227,7 @@ function InnerFlowChart(props: IInnerChartProps) {
             />
           </Box>
         </Box>
-      </DispatcherContext.Provider>
+      </EventBusContext.Provider>
     </Grommet>
   );
 }
@@ -245,7 +235,7 @@ function InnerFlowChart(props: IInnerChartProps) {
 export default function FlowChart(props: IFlowchartProps) {
   const theme = props.theme ? deepMerge(EditorTheme, props.theme) : EditorTheme;
   const reducer = createReducer();
-  const baseMiddlewares = [thunkMiddleware, eventBusMiddleware];
+  const baseMiddlewares = [thunkMiddleware];
   if (props.log) {
     baseMiddlewares.push(logMiddleware);
   }

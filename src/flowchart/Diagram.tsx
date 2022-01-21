@@ -1,5 +1,4 @@
 import * as React from "react";
-import DiagramContext from "./Context";
 import { Node } from "./Node";
 import { Link, NewLink } from "./Link";
 import {
@@ -163,26 +162,26 @@ export const Diagram = (props: IDiagramProps) => {
     });
   };
 
-  const onZoomIn = () => {
+  const onZoomIn = (scale: number) => {
     setPanZoomData({
       ...panZoomData,
-      scale: panZoomData.scale + 0.2,
+      scale
     });
   };
 
-  const onZoomOut = () => {
+  const onZoomOut = (scale: number) => {
     setPanZoomData({
       ...panZoomData,
-      scale: panZoomData.scale - 0.1,
+      scale
     });
   };
 
-  const onZoomReset = () => {
+  const onZoomReset = (scale: number) => {
     setPanZoomData({
       ...panZoomData,
       x: 0,
       y: 0,
-      scale: 1,
+      scale,
     });
   };
 
@@ -195,7 +194,7 @@ export const Diagram = (props: IDiagramProps) => {
   };
 
   return (
-    <DiagramContext.Provider value={panZoomData}>
+    <>
       <CanvasOuter className="flowDiagramCanvasOuter" autoCenter>
         <ZoomLayer
           width="100%"
@@ -223,7 +222,6 @@ export const Diagram = (props: IDiagramProps) => {
           </AreaSelect>
         </ZoomLayer>
       </CanvasOuter>
-
       <BottomCommands
         sidebarOpened={props.sidebarOpened}
         maxZoom={panZoomData.maxZoom}
@@ -237,7 +235,8 @@ export const Diagram = (props: IDiagramProps) => {
         onDeleteNodes={props.onDeleteNodes}
         canRedo={props.canRedo}
         canUndo={props.canUndo}
+        panZoomInfo={panZoomData}
       />
-    </DiagramContext.Provider>
+    </>
   );
 };

@@ -1,7 +1,7 @@
 import * as React from "react";
-import DiagramContext from "./Context";
 import { IOnAreaSelectionChanged, INode, IPosition } from "./definitions";
 import { ThemeContext } from "grommet";
+import { EventBusContext } from "./eventBus";
 
 interface IAreaSelectProps {
   onAreaSelectionChange: (evt: IOnAreaSelectionChanged) => void;
@@ -11,8 +11,7 @@ interface IAreaSelectProps {
 
 export function AreaSelect(props: IAreaSelectProps) {
   const [coord, setCoord] = React.useState() as any;
-
-  const context = React.useContext(DiagramContext);
+  const bus = React.useContext(EventBusContext);
   const theme: any = React.useContext(ThemeContext);
 
   const onMouseDown = (startEvent: React.MouseEvent) => {
@@ -20,7 +19,7 @@ export function AreaSelect(props: IAreaSelectProps) {
       return;
     }
 
-    const scale: number = context.scale || 1;
+    const scale: number = bus.getDiagramZoomScale() || 1;
 
     const canvas: any = document.getElementById("dumbot-selectable-canvas");
     const canvasRect = canvas.getBoundingClientRect();

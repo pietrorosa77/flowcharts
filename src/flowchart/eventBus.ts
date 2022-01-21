@@ -1,3 +1,4 @@
+import { createContext } from "react";
 import {
   ChartEventBusUnsubscibeHandle,
   ChartEvents,
@@ -5,6 +6,8 @@ import {
 } from "./definitions";
 
 let _bus: Comment;
+
+let _zoomscale = 1;
 
 const subscribe = (
   event: ChartEvents,
@@ -42,7 +45,13 @@ const emit = (type: ChartEvents, data: any) => {
   _bus.dispatchEvent(event);
 };
 
-export const useEventBus = (): IChartEventBus => {
+const storeDiagramZoomScale = (scale: number) => {
+  _zoomscale = scale;
+};
+
+const getDiagramZoomScale = () => _zoomscale || 1;
+
+export const createBus = (): IChartEventBus => {
   if (!_bus) {
     _bus = document.appendChild(new Comment("dmbtFlowchart-event-bus"));
   }
@@ -51,5 +60,10 @@ export const useEventBus = (): IChartEventBus => {
     subscribe,
     unSubscribe,
     emit,
+    storeDiagramZoomScale,
+    getDiagramZoomScale,
   };
 };
+
+export const EventBusContext: React.Context<IChartEventBus> =
+  createContext<IChartEventBus>(createBus());

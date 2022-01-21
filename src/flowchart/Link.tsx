@@ -7,7 +7,7 @@ import {
   IOnHighlightLinkEvent,
 } from "./definitions";
 import { ThemeContext } from "grommet";
-import { DispatcherContext } from "./reducer";
+import { EventBusContext } from "./eventBus";
 
 export interface ILinkProps {
   portFrom: string;
@@ -39,7 +39,7 @@ const svgStyleNew: React.CSSProperties = {
 export const NewLink = (props: { portHeight: number; chart: IChart }) => {
   const theme: any = React.useContext(ThemeContext);
   const [connection, setConnection] = React.useState<IOnConnection>();
-  const { bus } = React.useContext(DispatcherContext);
+  const bus = React.useContext(EventBusContext);
 
   React.useEffect(() => {
     const handler = bus.subscribe("evt-connection", (evt: IOnConnection) => {
@@ -100,7 +100,7 @@ export const NewLink = (props: { portHeight: number; chart: IChart }) => {
 
 export const Link = (props: ILinkProps) => {
   const theme: any = React.useContext(ThemeContext);
-  const { bus } = React.useContext(DispatcherContext);
+  const bus = React.useContext(EventBusContext);
   const fromId = props.nodeFrom.id;
   const toId = props.nodeTo.id;
   const fromFromProps = props.nodeFrom.position;
