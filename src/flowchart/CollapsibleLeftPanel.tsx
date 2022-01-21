@@ -3,7 +3,6 @@ import React from "react";
 import { Box, Text } from "grommet";
 import styled from "styled-components";
 import { FormClose } from "grommet-icons";
-import { ActionButton } from "./ActionButton";
 
 export const PanelContainer = styled.div<{
   width: string;
@@ -85,11 +84,11 @@ export const CollapsibleLeftPanel = ({
             pad="medium"
           >
             <Text margin={{ left: "small" }}>{title}</Text>
-            <ActionButton
-              icon={<FormClose />}
+            <FormClose
+              role="button"
               onClick={onClose}
-              size="small"
-              bgColor={headBgColor || "bars"}
+              className={`flowDiagramButtonBarAction`}
+              cursor="pointer"
               style={{ padding: "2px" }}
             />
           </Box>

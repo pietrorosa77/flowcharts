@@ -17,7 +17,6 @@ import { Configure, Trash } from "grommet-icons";
 import { isEqual, isFunction } from "lodash";
 import { blockEvent } from "./utils";
 import useResizeObserver from "use-resize-observer";
-import { ActionButton } from "./ActionButton";
 
 export interface INodeProps {
   node: ExtendedNode;
@@ -195,6 +194,17 @@ interface INodeHeaderProps {
   preventRemoval?: boolean;
 }
 
+const txtStyle: React.CSSProperties = {
+  textOverflow: "ellipsis",
+  display: "inline-block",
+  maxWidth: "145px",
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+};
+
+const boxAlignStyle: React.CSSProperties = { alignItems: "center" };
+const boxFlexStyle: React.CSSProperties = { flex: 1 };
+
 export const NodeHeader = (props: INodeHeaderProps) => {
   const {
     checked,
@@ -219,7 +229,7 @@ export const NodeHeader = (props: INodeHeaderProps) => {
         responsive={false}
         gap="xsmall"
         data-stopdrag={true}
-        style={{ alignItems: "center" }}
+        style={boxAlignStyle}
       >
         <Box onMouseDown={blockEvent}>
           <CheckBox
@@ -227,34 +237,22 @@ export const NodeHeader = (props: INodeHeaderProps) => {
             onChange={onCheckedChange}
           />
         </Box>
-        <Box style={{ flex: 1 }}>
-          <Text
-            style={{
-              textOverflow: "ellipsis",
-              display: "inline-block",
-              maxWidth: "145px",
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {title}
-          </Text>
+        <Box style={boxFlexStyle}>
+          <Text style={txtStyle}>{title}</Text>
         </Box>
         <Box direction="row-reverse" gap="xsmall">
-          <ActionButton
-            icon={<Configure size="20" />}
-            style={{ padding: "2px" }}
-            plain
+          <Configure
+            size="20"
             onClick={onSettings}
-            size="small"
+            cursor="pointer"
+            className="flowDiagramNodeActionIcon"
           />
           {!preventRemoval && (
-            <ActionButton
-              plain
-              style={{ padding: "2px" }}
-              icon={<Trash size="20" />}
+            <Trash
+              size="20"
               onClick={onDelete}
-              size="small"
+              cursor="pointer"
+              className="flowDiagramNodeActionIcon"
             />
           )}
         </Box>

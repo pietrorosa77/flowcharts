@@ -101,6 +101,25 @@ const GlobalStyle = createGlobalStyle`
         (props.theme as any).global.colors["accent-1"]} !important;
     }
   }
+  .flowDiagramNodeActionIcon {
+    &:hover {
+      stroke: ${(props) =>
+        (props.theme as any).global.colors["accent-1"]} !important;
+    }
+  }
+  .flowDiagramButtonBarAction {
+    &.inactive {
+      stroke: ${(props) =>
+        (props.theme as any).global.colors["dark-2"]} !important;
+      fill: ${(props) =>
+        (props.theme as any).global.colors["dark-2"]} !important;
+    }
+
+    &.on,
+    &:hover {
+      stroke: ${(props) => (props.theme as any).global.colors["accent-1"]};
+    }
+  }
 `;
 
 function InnerFlowChart(props: IInnerChartProps) {

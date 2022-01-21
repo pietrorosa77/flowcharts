@@ -3,7 +3,6 @@ import { ZoomIn, ZoomOut, View, Undo, Redo, Trash, Apps } from "grommet-icons";
 import { debounce } from "lodash";
 import DiagramContext from "./Context";
 import { IChart, IToggleSidebarEvent } from "./definitions";
-import { ActionButton } from "./ActionButton";
 import { Box } from "grommet";
 import { DispatcherContext } from "./reducer";
 
@@ -22,6 +21,11 @@ interface BottomCommandsProps {
   onDeleteNodes: (nodeIds: Array<string>) => void;
 }
 
+const btnStyle: React.CSSProperties = {
+  alignSelf: "center",
+  padding: "0px",
+  margin: "4px",
+};
 export const BottomCommands = (props: BottomCommandsProps) => {
   const {
     onZoomIn,
@@ -81,88 +85,74 @@ export const BottomCommands = (props: BottomCommandsProps) => {
         bottom: 0,
       }}
     >
-      <ActionButton
-        plain
-        noOutline
-        tip={`${opened ? "Hide" : "Show"} sidebar`}
-        icon={<Apps />}
+      <Apps
         onClick={onToggleSidebar}
-        size="small"
-        active={opened}
-        bgColor="transparent"
-        style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
+        className={`flowDiagramButtonBarAction${opened ? " on" : ""}`}
+        role="button"
+        cursor="pointer"
+        style={btnStyle}
       />
-      <ActionButton
-        plain
-        noOutline
-        tip={
-          panZoomInfo.scale === 1 && panZoomInfo.x === 0 && panZoomInfo.y === 0
-            ? undefined
-            : "Restore view"
-        }
-        icon={<View />}
+      <View
+        role="button"
         onClick={onZoomReset}
-        size="small"
-        disabled={
+        className={`flowDiagramButtonBarAction ${
           panZoomInfo.scale === 1 && panZoomInfo.x === 0 && panZoomInfo.y === 0
-        }
-        bgColor="transparent"
-        style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
+            ? "inactive"
+            : "active"
+        }`}
+        cursor="pointer"
+        style={btnStyle}
       />
-      <ActionButton
-        plain
-        noOutline
-        tip={panZoomInfo.scale > maxZoom ? undefined : "Zoom in"}
-        icon={<ZoomIn />}
+      <ZoomIn
+        role="button"
         onClick={onZoomIn}
-        size="small"
-        disabled={panZoomInfo.scale >= maxZoom}
-        bgColor="transparent"
-        style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
+        className={`flowDiagramButtonBarAction ${
+          panZoomInfo.scale >= maxZoom ? "inactive" : "active"
+        }`}
+        cursor="pointer"
+        style={btnStyle}
       />
-      <ActionButton
-        plain
-        noOutline
-        tip={panZoomInfo.scale <= minZoom ? undefined : "Zoom out"}
-        icon={<ZoomOut />}
+
+      <ZoomOut
+        role="button"
         onClick={onZoomOut}
-        size="small"
-        disabled={Math.round(panZoomInfo.scale * 100) / 100 <= minZoom}
-        bgColor="transparent"
-        style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
+        className={`flowDiagramButtonBarAction ${
+          Math.round(panZoomInfo.scale * 100) / 100 <= minZoom
+            ? "inactive"
+            : "active"
+        }`}
+        cursor="pointer"
+        style={btnStyle}
       />
-      <ActionButton
-        plain
-        noOutline
-        tip={!canUndo ? undefined : "Undo"}
-        icon={<Undo />}
+
+      <Undo
+        role="button"
         onClick={debounceUndo}
-        size="small"
-        disabled={!canUndo}
-        bgColor="transparent"
-        style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
+        className={`flowDiagramButtonBarAction ${
+          !canUndo ? "inactive" : "active"
+        }`}
+        cursor="pointer"
+        style={btnStyle}
       />
-      <ActionButton
-        plain
-        noOutline
-        tip={!canRedo ? undefined : "Redo"}
-        icon={<Redo />}
+
+      <Redo
+        role="button"
         onClick={debounceRedo}
-        size="small"
-        disabled={!canRedo}
-        bgColor="transparent"
-        style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
+        className={`flowDiagramButtonBarAction ${
+          !canRedo ? "inactive" : "active"
+        }`}
+        cursor="pointer"
+        style={btnStyle}
       />
-      <ActionButton
-        plain
-        noOutline
-        tip={nodeSelected.length === 0 ? undefined : "Delete"}
-        icon={<Trash />}
+
+      <Trash
+        role="button"
         onClick={onDeleteNodes}
-        size="small"
-        disabled={nodeSelected.length === 0}
-        bgColor="transparent"
-        style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
+        className={`flowDiagramButtonBarAction ${
+          nodeSelected.length === 0 ? "inactive" : "active"
+        }`}
+        cursor="pointer"
+        style={btnStyle}
       />
     </Box>
   );

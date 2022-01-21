@@ -36,6 +36,7 @@ export function NodeDragger(props: INodeDraggerProps) {
     zIndex: 100,
     position: "absolute",
     cursor: "move",
+    willChange: "transform, left, top",
     transform: `translate(${fromPropsPosition.x}px, ${fromPropsPosition.y}px)`,
   });
 
@@ -102,6 +103,8 @@ export function NodeDragger(props: INodeDraggerProps) {
     if (e.buttons !== 1) {
       return;
     }
+
+    let raFrameHandle = 0;
     const canvas: HTMLDivElement = document.getElementById(
       props.parentBoundId
     ) as any;
@@ -169,13 +172,15 @@ export function NodeDragger(props: INodeDraggerProps) {
     };
 
     const throttledMove = (e: any) =>
-      requestAnimationFrame(() => mouseMoveHandler(e));
+      (raFrameHandle = requestAnimationFrame(() => mouseMoveHandler(e)));
 
     const mouseUpHandler = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      cancelAnimationFrame(raFrameHandle);
       updateVisuals(draggedPosition.current, false);
       window.removeEventListener("pointerup", mouseUpHandler, false);
+      window.removeEventListener("pointercancel", mouseUpHandler, false);
       window.removeEventListener("pointermove", throttledMove, true);
       const finalDelta = {
         x: draggedPosition.current.x - StartingDragPosition.x,
@@ -193,6 +198,7 @@ export function NodeDragger(props: INodeDraggerProps) {
 
     updateVisuals(draggedPosition.current, true);
     window.addEventListener("pointerup", mouseUpHandler, false);
+    window.addEventListener("pointercancel", mouseUpHandler, false);
     window.addEventListener("pointermove", throttledMove, {
       capture: true,
       passive: true,
