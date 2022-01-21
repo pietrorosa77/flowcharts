@@ -3,8 +3,14 @@ import {
   getMultiselectionSquareRectOffsets,
   getPositionWithParentBoundsSize,
 } from "./utils";
-import { INode, IOnDragNodeEvent } from "./definitions";
+import {
+  INode,
+  IOnNodeDragEvent,
+  IOnDragNodeStopEvent,
+  IPosition,
+} from "./definitions";
 import { ThemeContext } from "grommet";
+import { DispatcherContext } from "./reducer";
 
 export interface INodeDraggerProps {
   children: any;
@@ -13,31 +19,48 @@ export interface INodeDraggerProps {
   parentBoundId: string;
   cursor?: string;
   selected?: boolean;
-  onDragEnd: (evt: IOnDragNodeEvent) => void;
+  onDragEnd: (evt: IOnDragNodeStopEvent) => void;
 }
 
 export function NodeDragger(props: INodeDraggerProps) {
   const fromPropsPosition = props.node.position;
-  const [position, setPosition] = React.useState(fromPropsPosition);
-  const draggedPosition = React.useRef(position);
-  const selected = props.selected;
+  const draggedPosition = React.useRef(fromPropsPosition);
+  const theme: any = React.useContext(ThemeContext);
+  const { dispatcher: dispatch, bus } = React.useContext(DispatcherContext);
   const node = props.node;
+  const bordersStyle = React.useRef<React.CSSProperties>({
+    borderRadius: "12px",
+    border: `2px solid ${theme.global.colors["light-1"]}`,
+  });
+  const hatStyle = React.useRef<React.CSSProperties>({
+    zIndex: 100,
+    position: "absolute",
+    cursor: "move",
+    transform: `translate(${fromPropsPosition.x}px, ${fromPropsPosition.y}px)`,
+  });
+
+  const hatRef = React.useRef<HTMLDivElement>();
+  const borderRef = React.useRef<HTMLDivElement>();
+
   const nodeSize = node.size;
   const nodeId = node.id;
-  const [dragging, setDragging] = React.useState(false);
-  const theme: any = React.useContext(ThemeContext);
+  const selected = props.selected;
+
+  React.useEffect(() => {
+    hatRef.current = document.getElementById(`${nodeId}-drag-hat`) as any;
+    borderRef.current = document.getElementById(`${nodeId}-borders`) as any;
+  }, [nodeId]);
 
   React.useEffect(() => {
     draggedPosition.current = fromPropsPosition;
-    setPosition(fromPropsPosition);
   }, [fromPropsPosition]);
 
   React.useEffect(() => {
-    const multidragMovingListener = (evt: any) => {
-      if (evt.detail.shouldSkip || nodeId === evt.detail.id || !selected) {
+    const multidragMovingListener = (evt: IOnNodeDragEvent) => {
+      if (evt.shouldSkip || nodeId === evt.id || !selected || !evt.multi) {
         return;
       }
-      const { delta, canvasSize, multiSelectOffsets } = evt.detail;
+      const { delta, canvasSize, multiSelectOffsets } = evt;
       const newPosition = getPositionWithParentBoundsSize(
         canvasSize,
         nodeSize || { h: 0, w: 0 },
@@ -46,37 +69,45 @@ export function NodeDragger(props: INodeDraggerProps) {
         draggedPosition.current.y + delta.y
       );
       draggedPosition.current = newPosition;
-      document.dispatchEvent(
-        new CustomEvent("nodePositionChanged", {
-          detail: {
-            shouldSkip: true,
-            id: nodeId,
-            position: newPosition,
-          },
-        })
-      );
-      setPosition(newPosition);
+      dispatch({
+        type: "evt-nodedrag",
+        payload: {
+          shouldSkip: true,
+          id: nodeId,
+          position: newPosition,
+          multi: true,
+        } as any,
+      });
+
+      updateVisuals(newPosition, true);
     };
-    document.addEventListener("nodePositionChanged", multidragMovingListener);
+    const handler = bus.subscribe("evt-nodedrag", multidragMovingListener);
     return () => {
-      document.removeEventListener(
-        "nodePositionChanged",
-        multidragMovingListener
-      );
+      bus.unSubscribe("evt-nodedrag", handler);
     };
-  }, [nodeId, selected, nodeSize]);
+  });
+
+  const updateVisuals = (position: IPosition, dragging: boolean) => {
+    if (!hatRef.current || !borderRef.current) {
+      return;
+    }
+    hatRef.current.style.zIndex = dragging ? "110" : "100";
+    hatRef.current.style.transform = `translate(${position.x}px, ${position.y}px)`;
+    borderRef.current.style.border = `2px solid ${
+      theme.global.colors[dragging ? "accent-1" : "light-1"]
+    }`;
+  };
 
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.buttons !== 1) {
+      return;
+    }
     const canvas: HTMLDivElement = document.getElementById(
       props.parentBoundId
     ) as any;
 
-    const domeNode: HTMLDivElement = document.getElementById(
-      `${node.id}-drag-hat`
-    ) as any;
-
     const canvasRect = canvas.getBoundingClientRect();
-    const nodeRect = domeNode.getBoundingClientRect();
+    const nodeRect = hatRef.current?.getBoundingClientRect() as DOMRect;
     const scale: number = props.scale || 1;
     const canvasSize = {
       w: canvasRect.width / scale,
@@ -123,20 +154,17 @@ export function NodeDragger(props: INodeDraggerProps) {
       };
 
       draggedPosition.current = finalPosition;
-
-      requestAnimationFrame(() => {
-        document.dispatchEvent(
-          new CustomEvent("nodePositionChanged", {
-            detail: {
-              id: props.node.id,
-              position: finalPosition,
-              canvasSize,
-              multiSelectOffsets,
-              delta,
-            },
-          })
-        );
-        setPosition(finalPosition);
+      updateVisuals(finalPosition, true);
+      dispatch({
+        type: "evt-nodedrag",
+        payload: {
+          id: props.node.id,
+          position: finalPosition,
+          canvasSize,
+          multiSelectOffsets,
+          delta,
+          multi: selected,
+        } as any,
       });
     };
 
@@ -146,9 +174,9 @@ export function NodeDragger(props: INodeDraggerProps) {
     const mouseUpHandler = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      setDragging(false);
-      window.removeEventListener("mouseup", mouseUpHandler, false);
-      window.removeEventListener("mousemove", throttledMove, true);
+      updateVisuals(draggedPosition.current, false);
+      window.removeEventListener("pointerup", mouseUpHandler, false);
+      window.removeEventListener("pointermove", throttledMove, true);
       const finalDelta = {
         x: draggedPosition.current.x - StartingDragPosition.x,
         y: draggedPosition.current.y - StartingDragPosition.y,
@@ -159,12 +187,13 @@ export function NodeDragger(props: INodeDraggerProps) {
         finalDelta,
         canvasSize,
         multiSelectOffsets,
+        multi: !!selected,
       });
     };
 
-    setDragging(true);
-    window.addEventListener("mouseup", mouseUpHandler, false);
-    window.addEventListener("mousemove", throttledMove, {
+    updateVisuals(draggedPosition.current, true);
+    window.addEventListener("pointerup", mouseUpHandler, false);
+    window.addEventListener("pointermove", throttledMove, {
       capture: true,
       passive: true,
     });
@@ -179,22 +208,13 @@ export function NodeDragger(props: INodeDraggerProps) {
       className={className}
       key={`${node.id}-drag-hat`}
       id={`${node.id}-drag-hat`}
-      onMouseDown={onMouseDown}
-      style={{
-        position: "absolute",
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        cursor: "move",
-        zIndex: dragging ? 110 : 100,
-      }}
+      onPointerDown={onMouseDown}
+      style={hatStyle.current}
     >
       <div
+        id={`${node.id}-borders`}
         className="flowDiagramNodeDraggerHatBorders"
-        style={{
-          borderRadius: "12px",
-          border: `2px solid ${
-            theme.global.colors[dragging ? "accent-1" : "light-1"]
-          }`,
-        }}
+        style={bordersStyle.current}
       >
         {props.children}
       </div>

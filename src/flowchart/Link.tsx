@@ -1,33 +1,9 @@
 import * as React from "react";
-import styled from "styled-components";
 import { IPosition, INode } from "./definitions";
-import { ThemeContext, Button } from "grommet";
-import { Cycle, Unlink } from "grommet-icons";
+import { ThemeContext } from "grommet";
 import { ActionButton } from "./ActionButton";
-
-const DelButton = styled(Button)<{ x: number; y: number }>`
-  width: 50px;
-  height: 50px;
-  background-color: ${(props) => props.theme.global.colors["accent-1"]};
-  cursor: pointer;
-  border-radius: 100%;
-  position: absolute;
-  top: ${(props) => `${props.y - 25}px`};
-  left: ${(props) => `${props.x - 25}px`};
-  display: flex;
-  align-items: center;
-  outline: none;
-  justify-content: center;
-  z-index: 500;
-  .del-link-icon {
-    stroke: ${(props) => props.theme.global.colors.brand};
-  }
-  &:hover {
-    .del-link-icon {
-      stroke: #fff;
-    }
-  }
-`;
+import { Cycle } from "grommet-icons";
+import { DispatcherContext } from "./reducer";
 
 export interface ILinkProps {
   portFrom: string;
@@ -39,86 +15,103 @@ export interface ILinkProps {
   onDeleteLink?: (id: string) => void;
 }
 
+const svgStyle: React.CSSProperties = {
+  overflow: "visible",
+  position: "absolute",
+  pointerEvents: "none",
+  left: 0,
+  top: 0,
+  bottom: 0,
+  right: 0,
+  width: "100%",
+  height: "100%",
+  zIndex: 0,
+};
+
 export const Link = (props: ILinkProps) => {
+  const theme: any = React.useContext(ThemeContext);
+  const { bus } = React.useContext(DispatcherContext);
   const fromId = props.nodeFrom.id;
   const toId = props.nodeTo.id;
   const fromToKey = `${fromId}-${toId}`;
   const fromFromProps = props.nodeFrom.position;
   const toFromProps = props.nodeTo.position;
-  const [from, setFrom] = React.useState(fromFromProps);
-  const [to, setTo] = React.useState(toFromProps);
+  const fromRef = React.useRef(fromFromProps);
+  const toRef = React.useRef(toFromProps);
+  const svgEl = React.useRef<SVGSVGElement>(null);
   const lineEl = React.useRef<SVGPathElement>(null);
+  const markerEl = React.useRef<SVGPathElement>(null);
   const portIndex = props.nodeFrom.ports[props.portFrom].index;
 
   React.useEffect(() => {
     const nodeMovingListener = (evt: any) => {
-      const { id, position } = evt.detail;
+      const { id, position } = evt;
 
       if (id !== fromId && id !== toId) {
         return;
       }
 
       if (id === fromId) {
-        setFrom(position);
+        fromRef.current = position;
       } else {
-        setTo(position);
+        toRef.current = position;
       }
+
+      const { startPos, endPos } = calculatePosition(
+        props.nodeFrom,
+        props.portHeight,
+        fromRef.current,
+        toRef.current,
+        portIndex,
+        props.creating
+      );
+      const points = defaultPath(startPos, endPos);
+      lineEl.current?.setAttribute("d", points);
     };
-    document.addEventListener("nodePositionChanged", nodeMovingListener);
+
+    const mHandler = bus.subscribe("evt-nodedrag", nodeMovingListener);
+    // const sHandler = bus.subscribe("evt-singleDrag", nodeMovingListener);
     return () => {
-      document.removeEventListener("nodePositionChanged", nodeMovingListener);
+      bus.unSubscribe("evt-nodedrag", mHandler);
+      // bus.unSubscribe("evt-multiDrag", mHandler);
     };
     // eslint-disable-next-line
-  }, [fromToKey]);
+  }, [fromToKey, props.nodeFrom, props.creating, portIndex, props.portHeight]);
 
   React.useEffect(() => {
-    setFrom(fromFromProps);
+    fromRef.current = fromFromProps;
   }, [fromFromProps]);
 
   React.useEffect(() => {
-    setTo(toFromProps);
+    toRef.current = toFromProps;
   }, [toFromProps]);
-  // center the line in the middle of the port so:
-  // so subtract from port height hlf the line strokeWidth and  divide by 2 to get the middle
-  const offsetY = (props.portHeight - 2) / 2;
-  const startPos = {
-    x: from.x + (props.nodeFrom.size ? props.nodeFrom.size.w : 0),
-    y:
-      from.y +
-      (props.nodeFrom.size ? props.nodeFrom.size.h : 0) -
-      (portIndex || 1) * props.portHeight +
-      offsetY,
-  };
-  let endPos = to;
-  const theme: any = React.useContext(ThemeContext);
-  const [isHovered, setIsHover] = React.useState(false);
-
-  const getMidPoint = () => {
-    if (!lineEl.current) {
-      return null;
-    }
-
-    const pathLength = Math.floor(lineEl.current.getTotalLength());
-    const pathMiddle = (50 * pathLength) / 100;
-    const midPoint = lineEl.current.getPointAtLength(pathMiddle);
-    return midPoint;
-  };
-
-  const midPoint = getMidPoint();
-
-  const onHover = () => {
-    setIsHover(true);
-  };
-
-  const onOut = () => {
-    setIsHover(false);
-  };
 
   const onDelete = () => {
     if (props.onDeleteLink) {
       props.onDeleteLink(props.id);
     }
   };
+
+  // const onHover = () => {
+  //   (svgEl.current as any).style.zIndex = "500";
+  //   (markerEl.current as any).style.fill = theme.global.colors["accent-1"];
+  //   (lineEl.current as any).style.stroke = theme.global.colors["accent-1"];
+  // };
+
+  // const onOut = () => {
+  //   (svgEl.current as any).style.zIndex = "0";
+  //   (markerEl.current as any).style.fill = theme.global.colors.connection;
+  //   (lineEl.current as any).style.stroke = theme.global.colors.connection;
+  // };
+
+  const { startPos, endPos } = calculatePosition(
+    props.nodeFrom,
+    props.portHeight,
+    fromRef.current,
+    toRef.current,
+    portIndex,
+    props.creating
+  );
 
   if (!startPos || !endPos) return null;
 
@@ -143,29 +136,11 @@ export const Link = (props: ILinkProps) => {
     );
   }
 
-  endPos = {
-    x: endPos.x - 5,
-    y: endPos.y + (props.creating ? 0 : 35),
-  };
-
   // implement custom path functions here
   const points = defaultPath(startPos, endPos);
   return (
     <React.Fragment>
-      <svg
-        style={{
-          overflow: "visible",
-          position: "absolute",
-          pointerEvents: "none",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          right: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: isHovered || props.creating ? 500 : 0,
-        }}
-      >
+      <svg ref={svgEl} style={svgStyle}>
         <defs>
           <marker
             id={`lmark-${props.id}`}
@@ -178,11 +153,8 @@ export const Link = (props: ILinkProps) => {
           >
             <path
               d="M 0 0 L 10 5 L 0 10 z"
-              fill={
-                isHovered
-                  ? theme.global.colors["accent-1"]
-                  : theme.global.colors.connection
-              }
+              ref={markerEl}
+              fill={theme.global.colors.connection}
             />
           </marker>
         </defs>
@@ -190,31 +162,42 @@ export const Link = (props: ILinkProps) => {
           markerEnd={`url(#lmark-${props.id})`}
           ref={lineEl}
           d={points}
-          style={{ pointerEvents: "all" }}
-          stroke={
-            isHovered
-              ? theme.global.colors["accent-1"]
-              : theme.global.colors.connection
-          }
+          stroke={theme.global.colors.connection}
           strokeWidth="4"
           fill="none"
-          onMouseEnter={onHover}
-          onMouseLeave={onOut}
         />
       </svg>
-      {!props.creating && midPoint && isHovered && (
-        <DelButton
-          x={midPoint.x}
-          y={midPoint.y}
-          icon={<Unlink className="del-link-icon" />}
-          onMouseEnter={onHover}
-          onMouseLeave={onOut}
-          onClick={onDelete}
-        ></DelButton>
-      )}
     </React.Fragment>
   );
 };
+
+export function calculatePosition(
+  nodeFrom: INode,
+  portHeight: number,
+  from: IPosition,
+  to: IPosition,
+  portIndex: number,
+  creating?: boolean
+) {
+  const offsetY = (portHeight - 2) / 2;
+  const startPos = {
+    x: from.x + (nodeFrom.size ? nodeFrom.size.w : 0),
+    y:
+      from.y +
+      (nodeFrom.size ? nodeFrom.size.h : 0) -
+      (portIndex || 1) * portHeight +
+      offsetY,
+  };
+  const endPos = {
+    x: to.x - 5,
+    y: to.y + (creating ? 0 : 35),
+  };
+
+  return {
+    startPos,
+    endPos,
+  };
+}
 
 export function defaultPath(startPos: IPosition, endPos: IPosition) {
   const bezierWeight = 0.675;

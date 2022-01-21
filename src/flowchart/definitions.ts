@@ -67,7 +67,7 @@ export interface IDiagramContext {
   maxZoom: number;
 }
 
-export interface IOnDragNodeEvent {
+export interface IOnDragNodeStopEvent {
   position: IPosition;
   node: INode;
   canvasSize: { w: number; h: number };
@@ -83,6 +83,7 @@ export interface IOnDragNodeEvent {
     x: number;
     y: number;
   };
+  multi: boolean;
 }
 
 export interface IOnStartConnection {
@@ -112,6 +113,46 @@ export interface IFloatingPosition {
   bottom?: number | string;
 }
 
+export type SimpleChartAction = { type: Actions; payload: DiagramEventArgs };
+export type ChartAction = SimpleChartAction | ((store: ChartStore) => any);
+
+export type ChartDispatch = (action: ChartAction) => any;
+
+export type ChartStore = {
+  getState: () => IFlowchartState;
+  dispatch: ChartDispatch;
+  getEventBus: () => IChartEventBus;
+};
+
+export type ChartMiddlewhare = (
+  store: ChartStore
+) => (next: ChartDispatch) => (action: ChartAction) => any;
+
+export type ChartEventBusUnsubscibeHandle = (event: CustomEvent) => void;
+export type ChartEvents =
+  | "evt-stateChanged"
+  | "evt-nodedrag"
+  | "evt-toggleSidebar";
+
+export interface IToggleSidebarEvent {
+  opened: boolean;
+}
+
+export interface IChartEventBus {
+  subscribe: (
+    event: ChartEvents,
+    callback: (data?: any) => void,
+    options?: AddEventListenerOptions
+  ) => ChartEventBusUnsubscibeHandle;
+
+  unSubscribe: (
+    event: ChartEvents,
+    unsubscribeHandle: ChartEventBusUnsubscibeHandle,
+    options?: AddEventListenerOptions
+  ) => void;
+
+  emit: (type: ChartEvents, data: any) => void;
+}
 export type Actions =
   | "onDragNodeStop"
   | "onPortPositioningChange"
@@ -125,7 +166,8 @@ export type Actions =
   | "onUpdateNode"
   | "onNodeSizeChanged"
   | "onNameChange"
-  | "onRedo";
+  | "onRedo"
+  | ChartEvents;
 
 export interface IFlowchartState {
   chart: IChart;
@@ -160,17 +202,33 @@ export interface INodePanelEditor {
   customData?: { [key: string]: any };
   renderNode?: (node: INode) => JSX.Element;
   renderPort?: (port: IPort) => JSX.Element;
-  nodePropertiesValidator: (newProps: { [key: string]: any }) => {
+  nodePropertiesValidator?: (newProps: { [key: string]: any }) => {
     error: string | undefined;
   };
-  portPropertiesValidator: (newProps: { [key: string]: any }) => {
+  portPropertiesValidator?: (newProps: { [key: string]: any }) => {
     error: string | undefined;
   };
 }
 
+export type IOnNodeDragEvent = {
+  shouldSkip: boolean;
+  id: string;
+  position: IPosition;
+  delta: {
+    x: number;
+    y: number;
+  };
+  canvasSize: {
+    w: number;
+    h: number;
+  };
+  multiSelectOffsets: any;
+  multi?: boolean;
+};
+
 export type DiagramEventArgs =
   | undefined
-  | IOnDragNodeEvent
+  | IOnDragNodeStopEvent
   | IOnStartConnection
   | IOnEndConnection
   | IOnNodeSelectionChanged
@@ -179,4 +237,6 @@ export type DiagramEventArgs =
   | IOnNodeSizeChanged
   | string
   | string[]
+  | IOnNodeDragEvent
+  | IToggleSidebarEvent
   | { x: number; y: number };

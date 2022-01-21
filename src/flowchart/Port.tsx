@@ -169,10 +169,10 @@ export const NodePort = React.memo(
       };
 
       const mouseUpHandler = (e: MouseEvent) => {
-        window.removeEventListener("mousemove", throttledMove, {
+        window.removeEventListener("pointermove", throttledMove, {
           capture: false,
         });
-        window.removeEventListener("mouseup", mouseUpHandler, false);
+        window.removeEventListener("pointerup", mouseUpHandler, false);
         const link = {
           from: {
             nodeId: node.id,
@@ -195,8 +195,8 @@ export const NodePort = React.memo(
       };
 
       const throttledMove = throttle(_mouseMoveHandler, 30);
-      window.addEventListener("mouseup", mouseUpHandler, false);
-      window.addEventListener("mousemove", throttledMove, {
+      window.addEventListener("pointerup", mouseUpHandler, false);
+      window.addEventListener("pointermove", throttledMove, {
         capture: false,
         passive: true,
       });
@@ -205,7 +205,7 @@ export const NodePort = React.memo(
     return (
       <PortContainer port={props.port} renderPort={props.renderPort}>
         {!props.hidePort && (
-          <OutputPort onMouseDown={handleMouseDown}>
+          <OutputPort onPointerDown={handleMouseDown}>
             <PortOuter className="outer-port">
               <PortInner
                 id={`${node.id}-${port.id}`}

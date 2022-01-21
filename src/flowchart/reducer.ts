@@ -1,96 +1,150 @@
-import {
-  IChart,
-  IOnDragNodeEvent,
-  IOnNodeSelectionChanged,
-  IOnAreaSelectionChanged,
-  INode,
-  IOnNodeSizeChanged,
-  IOnEndConnection,
-  IPosition,
-  ILink,
-  IFlowchartState,
-  DiagramEventArgs,
-  Actions,
-} from "./definitions";
-import { getPositionWithParentBoundsSize } from "./utils";
-import { UndoRedoManager } from "./undo-redo";
 import { nanoid } from "nanoid";
+import { createContext, useRef, useState } from "react";
+import {
+  Actions,
+  ChartDispatch,
+  ChartMiddlewhare,
+  ChartStore,
+  IChart,
+  IChartEventBus,
+  IFlowchartState,
+  ILink,
+  INode,
+  IOnAreaSelectionChanged,
+  IOnDragNodeStopEvent,
+  IOnEndConnection,
+  IOnNodeSelectionChanged,
+  IOnNodeSizeChanged,
+  IPosition,
+  SimpleChartAction,
+} from "./definitions";
+import { composeMiddleware } from "./middlewares";
+import { UndoRedoManager } from "./undo-redo";
+import { getPositionWithParentBoundsSize } from "./utils";
 
 let history: UndoRedoManager;
 
-export const reducer = (
-  state: IFlowchartState,
-  action: { type: Actions; payload: DiagramEventArgs }
-) => {
-  let ret: IChart = state.chart;
-  let name = state.name;
-  const changeSummary = {
-    totalActions: state.changeSummary.totalActions + 1,
-    lastAction: action.type as Actions | undefined,
+export const DispatcherContext: React.Context<{
+  dispatcher: ChartDispatch;
+  bus: IChartEventBus;
+}> = createContext<any>(null);
+
+export function useChartReducer(
+  reducer: (
+    state: IFlowchartState,
+    action: SimpleChartAction
+  ) => IFlowchartState,
+  initialState: IFlowchartState,
+  middlewares: ChartMiddlewhare[] = [],
+  eventBus: IChartEventBus
+): [IFlowchartState, ChartDispatch] {
+  const hook = useState(initialState);
+  const state = hook[0];
+  const setState = hook[1];
+  const draftState = useRef(initialState);
+
+  const dispatch = (action: SimpleChartAction) => {
+    draftState.current = reducer(draftState.current, action);
+    setState(draftState.current);
+    return action;
+  };
+  const store: ChartStore = {
+    getState: () => draftState.current,
+    getEventBus: () => eventBus,
+    dispatch: (...args: any[]) => (enhancedDispatch as any)(...args),
+  };
+  const chain = middlewares.map((middleware) => middleware(store));
+  // eslint-disable-next-line
+  const enhancedDispatch = composeMiddleware.apply(
+    undefined,
+    chain
+  )(dispatch) as ChartDispatch;
+
+  (window as any)._Dumbot = {
+    enhancedDispatch,
   };
 
-  if (!history) {
-    history = new UndoRedoManager(state.chart);
-  }
+  return [state, enhancedDispatch];
+}
 
-  switch (action.type) {
-    case "onAreaSelectionChanged":
-      ret = onAreaSelectionChanged(
-        state.chart,
-        action.payload as IOnAreaSelectionChanged
-      );
-      break;
-    case "onNodeAdded":
-      ret = onNodeAdded(state.chart, action.payload as INode);
-      break;
-    case "onNodeSelectionChanged":
-      ret = onNodeSelectionChanged(
-        state.chart,
-        action.payload as IOnNodeSelectionChanged
-      );
-      break;
-    case "onDeleteNodes":
-      ret = onDeleteNodes(state.chart, action.payload as string[]);
-      break;
-    case "onDeleteLink":
-      ret = onDeleteLink(state.chart, action.payload as string);
-      break;
-    case "onEndConnection":
-      ret = onEndConnection(state.chart, action.payload as IOnEndConnection);
-      break;
-    case "onDragNodeStop":
-      ret = onDragNodeStop(state.chart, action.payload as IOnDragNodeEvent);
-      break;
-    case "onUpdateNode":
-      ret = onUpdateNode(state.chart, action.payload as INode);
-      break;
-    case "onNodeSizeChanged":
-      ret = onNodeSizeChanged(
-        state.chart,
-        action.payload as IOnNodeSizeChanged
-      );
-      break;
-    case "onUndo":
-    case "onRedo":
-      ret = action.type === "onUndo" ? history.undo() : history.redo();
-      break;
-    case "onNameChange":
-      name = action.payload as string;
-      break;
+export const createReducer = () => {
+  return function chartReducer(
+    state: IFlowchartState,
+    action: SimpleChartAction
+  ): IFlowchartState {
+    let ret: IChart = state.chart;
+    let name = state.name;
+    const changeSummary = {
+      totalActions: state.changeSummary.totalActions + 1,
+      lastAction: action.type as Actions | undefined,
+    };
 
-    default:
-      ret = state.chart;
-      break;
-  }
+    if (!history) {
+      history = new UndoRedoManager(state.chart);
+    }
 
-  history.save(ret, action.type);
+    switch (action.type) {
+      case "onAreaSelectionChanged":
+        ret = onAreaSelectionChanged(
+          state.chart,
+          action.payload as IOnAreaSelectionChanged
+        );
+        break;
+      case "onNodeAdded":
+        ret = onNodeAdded(state.chart, action.payload as INode);
+        break;
+      case "onNodeSelectionChanged":
+        ret = onNodeSelectionChanged(
+          state.chart,
+          action.payload as IOnNodeSelectionChanged
+        );
+        break;
+      case "onDeleteNodes":
+        ret = onDeleteNodes(state.chart, action.payload as string[]);
+        break;
+      case "onDeleteLink":
+        ret = onDeleteLink(state.chart, action.payload as string);
+        break;
+      case "onEndConnection":
+        ret = onEndConnection(state.chart, action.payload as IOnEndConnection);
+        break;
+      case "onDragNodeStop":
+        ret = onDragNodeStop(
+          state.chart,
+          action.payload as IOnDragNodeStopEvent
+        );
+        break;
+      case "onUpdateNode":
+        ret = onUpdateNode(state.chart, action.payload as INode);
+        break;
+      case "onNodeSizeChanged":
+        ret = onNodeSizeChanged(
+          state.chart,
+          action.payload as IOnNodeSizeChanged
+        );
+        break;
+      case "onUndo":
+      case "onRedo":
+        ret = action.type === "onUndo" ? history.undo() : history.redo();
+        break;
+      case "onNameChange":
+        name = action.payload as string;
+        break;
 
-  return {
-    name,
-    canUndo: history.canUndo(),
-    canRedo: history.canRedo(),
-    chart: ret,
-    changeSummary,
+      default:
+        ret = state.chart;
+        break;
+    }
+
+    history.save(ret, action.type);
+
+    return {
+      name,
+      canUndo: history.canUndo(),
+      canRedo: history.canRedo(),
+      chart: ret,
+      changeSummary,
+    };
   };
 };
 
@@ -169,29 +223,31 @@ export const onNodeSizeChanged = (
 
 export const onDragNodeStop = (
   chart: IChart,
-  evt: IOnDragNodeEvent
+  evt: IOnDragNodeStopEvent
 ): IChart => {
   const { finalDelta, canvasSize, multiSelectOffsets, node: leadNode } = evt;
   const selectedIds = Object.keys(chart.selected).filter(
     (k) => k !== leadNode.id && chart.selected[k] === true
   );
-  const alsoMoved = selectedIds.reduce((acc, id) => {
-    const nodePos = getPositionWithParentBoundsSize(
-      canvasSize,
-      chart.nodes[id].size || { h: 0, w: 0 },
-      multiSelectOffsets[`${id}-drag-hat`],
-      chart.nodes[id].position.x + finalDelta.x,
-      chart.nodes[id].position.y + finalDelta.y
-    );
+  const alsoMoved = evt.multi
+    ? selectedIds.reduce((acc, id) => {
+        const nodePos = getPositionWithParentBoundsSize(
+          canvasSize,
+          chart.nodes[id].size || { h: 0, w: 0 },
+          multiSelectOffsets[`${id}-drag-hat`],
+          chart.nodes[id].position.x + finalDelta.x,
+          chart.nodes[id].position.y + finalDelta.y
+        );
 
-    return {
-      ...acc,
-      [`${id}`]: {
-        ...chart.nodes[id],
-        position: nodePos,
-      },
-    };
-  }, {});
+        return {
+          ...acc,
+          [`${id}`]: {
+            ...chart.nodes[id],
+            position: nodePos,
+          },
+        };
+      }, {})
+    : {};
 
   return {
     ...chart,
@@ -263,7 +319,9 @@ export const onDeleteNodes = (chart: IChart, selectedNodes: Array<string>) => {
     connecting: undefined,
   };
 
-  const nodeIds = selectedNodes.filter((k) => chart.nodes[k] && !chart.nodes[k].preventRemoval);
+  const nodeIds = selectedNodes.filter(
+    (k) => chart.nodes[k] && !chart.nodes[k].preventRemoval
+  );
 
   const links = Object.keys(chart.links).filter((k) => {
     const l = chart.links[k];

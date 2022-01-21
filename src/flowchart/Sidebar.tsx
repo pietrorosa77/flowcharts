@@ -2,15 +2,22 @@ import React from "react";
 
 import { Box } from "grommet";
 import { EmptyCircle } from "grommet-icons";
-import { ExtendedNode, INode } from "./definitions";
+import { ExtendedNode, INode, IToggleSidebarEvent } from "./definitions";
 import { nanoid } from "nanoid";
 import { CollapsibleLeftPanel } from "./CollapsibleLeftPanel";
 import { StyledButton } from "./ActionButton";
+import { DispatcherContext } from "./reducer";
 
 export interface ISidebarProps {
-  opened?: boolean;
-  onClose: () => void;
-  buttons: ExtendedNode[] | {id: string; title: string; icon: string; getNode:() => ExtendedNode}[];
+  initiallyOpened?: boolean;
+  buttons:
+    | ExtendedNode[]
+    | {
+        id: string;
+        title: string;
+        icon: string;
+        getNode: () => ExtendedNode;
+      }[];
   width: string;
 }
 
@@ -21,13 +28,32 @@ const getNode = (node: ExtendedNode): ExtendedNode => {
   };
 };
 
-export const Sidebar = ({ opened, onClose, buttons, width }: ISidebarProps) => {
+export const Sidebar = ({ initiallyOpened, buttons, width }: ISidebarProps) => {
+  const { dispatcher: dispatch, bus } = React.useContext(DispatcherContext);
+  const [opened, setOpened] = React.useState(initiallyOpened);
+
+  React.useEffect(() => {
+    const handler = bus.subscribe(
+      "evt-toggleSidebar",
+      (evt: IToggleSidebarEvent) => {
+        setOpened(evt.opened);
+      }
+    );
+    return () => bus.unSubscribe("evt-toggleSidebar", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const onDragStart = (event: any, node: INode) => {
     event.persist();
     const current = event.currentTarget as any;
     current.classList.add("dragging");
     event.dataTransfer.setData("DIAGRAM-BLOCK", JSON.stringify(node));
     return true;
+  };
+
+  const onClose = () => {
+    setOpened(false);
+    dispatch({ type: "evt-toggleSidebar", payload: { opened: false } });
   };
 
   const onDragEnd = (event: any) => {
@@ -58,7 +84,10 @@ export const Sidebar = ({ opened, onClose, buttons, width }: ISidebarProps) => {
               bgColor="bars"
               accentColor="accent-1"
               onDragStart={(event: any) =>
-                onDragStart(event, btn.getNode ? btn.getNode() : getNode(btn as ExtendedNode))
+                onDragStart(
+                  event,
+                  btn.getNode ? btn.getNode() : getNode(btn as ExtendedNode)
+                )
               }
               onDragEnd={(event: any) => onDragEnd(event)}
               opacity={0.7}

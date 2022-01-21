@@ -2,9 +2,10 @@ import React from "react";
 import { ZoomIn, ZoomOut, View, Undo, Redo, Trash, Apps } from "grommet-icons";
 import { debounce } from "lodash";
 import DiagramContext from "./Context";
-import { IChart } from "./definitions";
+import { IChart, IToggleSidebarEvent } from "./definitions";
 import { ActionButton } from "./ActionButton";
 import { Box } from "grommet";
+import { DispatcherContext } from "./reducer";
 
 interface BottomCommandsProps {
   canUndo: boolean;
@@ -19,7 +20,6 @@ interface BottomCommandsProps {
   onUndo: () => void;
   onRedo: () => void;
   onDeleteNodes: (nodeIds: Array<string>) => void;
-  toggleSidebar: () => void;
 }
 
 export const BottomCommands = (props: BottomCommandsProps) => {
@@ -36,9 +36,10 @@ export const BottomCommands = (props: BottomCommandsProps) => {
     canRedo,
     canUndo,
     sidebarOpened,
-    toggleSidebar,
   } = props;
 
+  const [opened, setOpened] = React.useState(sidebarOpened || false);
+  const { dispatcher: dispatch, bus } = React.useContext(DispatcherContext);
   const nodeSelected = Object.keys(chart.selected).filter(
     (k) => chart.selected[k]
   );
@@ -46,8 +47,24 @@ export const BottomCommands = (props: BottomCommandsProps) => {
   const debounceUndo = React.useRef(debounce(onUndo, 80)).current;
   const debounceRedo = React.useRef(debounce(onRedo, 80)).current;
 
+  React.useEffect(() => {
+    const handler = bus.subscribe(
+      "evt-toggleSidebar",
+      (evt: IToggleSidebarEvent) => {
+        setOpened(evt.opened);
+      }
+    );
+    return () => bus.unSubscribe("evt-toggleSidebar", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const onDeleteNodes = () => {
     delNodes(nodeSelected);
+  };
+
+  const onToggleSidebar = () => {
+    dispatch({ type: "evt-toggleSidebar", payload: { opened: !opened } });
+    setOpened(!opened);
   };
 
   return (
@@ -67,11 +84,11 @@ export const BottomCommands = (props: BottomCommandsProps) => {
       <ActionButton
         plain
         noOutline
-        tip={`${sidebarOpened ? "Hide" : "Show"} sidebar`}
+        tip={`${opened ? "Hide" : "Show"} sidebar`}
         icon={<Apps />}
-        onClick={toggleSidebar}
+        onClick={onToggleSidebar}
         size="small"
-        active={sidebarOpened}
+        active={opened}
         bgColor="transparent"
         style={{ alignSelf: "center", padding: "0px", margin: "4px" }}
       />

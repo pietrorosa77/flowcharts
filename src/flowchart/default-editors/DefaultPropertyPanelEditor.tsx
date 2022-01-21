@@ -38,7 +38,9 @@ export default function DefaultPropertyPanelEditor(props: INodePanelEditor) {
   };
 
   const onEditProperties = (evt: any) => {
-    const result = props.nodePropertiesValidator(evt.updated_src);
+    const result = props.nodePropertiesValidator
+      ? props.nodePropertiesValidator(evt.updated_src)
+      : evt.updated_src;
     setNodePropsError(result.error || "");
     if (result.error) {
       return false;

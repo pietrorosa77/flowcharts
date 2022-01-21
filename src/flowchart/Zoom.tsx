@@ -78,7 +78,7 @@ export function ZoomLayer(props: IPanZoomLayerProps) {
   }, [props.x, props.y]);
 
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (e.shiftKey) {
+    if (e.shiftKey && e.buttons !== 1) {
       return;
     }
 

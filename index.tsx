@@ -48,6 +48,7 @@ ReactDOM.render(
       //width="500px"
       //height="500px"
       nodeSize={250}
+      log
       chart={initialChart}
       sidebarInitiallyOpened
       sidebarButtons={availableNodes}

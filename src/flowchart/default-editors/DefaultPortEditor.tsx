@@ -11,7 +11,7 @@ export default function PortsEditor(props: {
   label?: string;
   renderPort?: (port: IPort) => JSX.Element;
   onChange: (ports: { [key: string]: IPort }) => void;
-  portPropertiesValidator: (newProps: { [key: string]: any }) => {
+  portPropertiesValidator?: (newProps: { [key: string]: any }) => {
     error: string | undefined;
   };
 }) {
@@ -84,7 +84,9 @@ export default function PortsEditor(props: {
   };
 
   const onEditProperties = (port: IPort, evt: any) => {
-    const result = props.portPropertiesValidator(evt.updated_src);
+    const result = props.portPropertiesValidator
+      ? props.portPropertiesValidator(evt.updated_src)
+      : evt.updated_src;
     setportPropsError(result.error || "");
     if (result.error) {
       return false;

@@ -4,7 +4,6 @@ import { Node } from "./Node";
 import { Link } from "./Link";
 import {
   IChart,
-  IOnDragNodeEvent,
   IOnStartConnection,
   IOnEndConnection,
   IOnNodeSelectionChanged,
@@ -14,6 +13,7 @@ import {
   IPort,
   IPosition,
   ILink,
+  IOnDragNodeStopEvent,
 } from "./definitions";
 import { PORT_OFFSET_Y } from "./Port";
 import { ZoomLayer } from "./Zoom";
@@ -21,6 +21,7 @@ import { AreaSelect } from "./AreaSelect";
 import styled from "styled-components";
 import { nanoid } from "nanoid";
 import { getNodeRenderer } from "./utils";
+import { BottomCommands } from "./BottomCommands";
 
 export const CanvasOuter = styled.div<any>`
   position: relative;
@@ -51,18 +52,20 @@ interface IDiagramProps {
   chart: IChart;
   highlighted?: Array<string>;
   nodeSize?: number;
-  onDragNodeStop: (evt: IOnDragNodeEvent) => void;
+  onDragNodeStop: (evt: IOnDragNodeStopEvent) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
   onNodeSelectionChanged: (evt: IOnNodeSelectionChanged) => void;
   onAreaSelectionChange: (evt: IOnAreaSelectionChanged) => void;
   onNodeAdded: (evt: INode) => void;
   onNodeSizeChanged: (evt: IOnNodeSizeChanged) => void;
-  onPanChange?: (x: number, y: number) => void;
   onDeleteLink: (id: string) => void;
   onNodeSettings: (node: INode) => void;
   onDeleteNodes: (ids: string[]) => void;
   renderNode?: (node: INode) => JSX.Element;
   renderPort?: (port: IPort) => JSX.Element;
+  sidebarOpened?: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export const Diagram = (props: IDiagramProps) => {
@@ -70,10 +73,13 @@ export const Diagram = (props: IDiagramProps) => {
   const [newLink, setNewLink] = React.useState<ILink>();
   const chart = props.chart;
   const canvas = React.createRef<HTMLDivElement>();
-  const diagramContext = React.useContext(DiagramContext);
-  const panZoomData = diagramContext
-    ? { x: diagramContext.x, y: diagramContext.y, scale: diagramContext.scale }
-    : { x: 0, y: 0, scale: 1 };
+  const [panZoomData, setPanZoomData] = React.useState({
+    x: 0,
+    y: 0,
+    scale: 1,
+    minZoom: 0.1,
+    maxZoom: 2,
+  });
   const highlighted = props.highlighted || [];
 
   const onNodeDelete = (id: string) => {
@@ -179,33 +185,89 @@ export const Diagram = (props: IDiagramProps) => {
     e.preventDefault();
   };
 
+  const onPanChange = (x: number, y: number) => {
+    setPanZoomData({
+      ...panZoomData,
+      x,
+      y,
+    });
+  };
+
+  const onZoomIn = () => {
+    setPanZoomData({
+      ...panZoomData,
+      scale: panZoomData.scale + 0.2,
+    });
+  };
+
+  const onZoomOut = () => {
+    setPanZoomData({
+      ...panZoomData,
+      scale: panZoomData.scale - 0.1,
+    });
+  };
+
+  const onZoomReset = () => {
+    setPanZoomData({
+      ...panZoomData,
+      x: 0,
+      y: 0,
+      scale: 1,
+    });
+  };
+
+  const onUndo = () => {
+    //onDiagramEvent("onUndo", {})
+  };
+
+  const onRedo = () => {
+    //onDiagramEvent("onUndo", {})
+  };
+
   return (
-    <CanvasOuter className="flowDiagramCanvasOuter" autoCenter>
-      <ZoomLayer
-        width="100%"
-        height="100%"
-        x={panZoomData.x}
-        y={panZoomData.y}
-        zoom={panZoomData.scale}
-        onPan={props.onPanChange}
-      >
-        <AreaSelect
-          onAreaSelectionChange={props.onAreaSelectionChange}
-          nodes={props.chart.nodes}
+    <DiagramContext.Provider value={panZoomData}>
+      <CanvasOuter className="flowDiagramCanvasOuter" autoCenter>
+        <ZoomLayer
+          width="100%"
+          height="100%"
+          x={panZoomData.x}
+          y={panZoomData.y}
+          zoom={panZoomData.scale}
+          onPan={onPanChange}
         >
-          <CanvasInner
-            ref={canvas}
-            id={canvasId}
-            className="flowDiagramCanvasInner"
-            onDrop={onBlockDrop}
-            onDragOver={onDragOver}
+          <AreaSelect
+            onAreaSelectionChange={props.onAreaSelectionChange}
+            nodes={props.chart.nodes}
           >
-            {renderNodes()}
-            {renderLinks()}
-            {renderNewLink()}
-          </CanvasInner>
-        </AreaSelect>
-      </ZoomLayer>
-    </CanvasOuter>
+            <CanvasInner
+              ref={canvas}
+              id={canvasId}
+              className="flowDiagramCanvasInner"
+              onDrop={onBlockDrop}
+              onDragOver={onDragOver}
+            >
+              {renderNodes()}
+              {renderLinks()}
+              {renderNewLink()}
+            </CanvasInner>
+          </AreaSelect>
+        </ZoomLayer>
+      </CanvasOuter>
+
+      <BottomCommands
+        sidebarOpened={props.sidebarOpened}
+        maxZoom={panZoomData.maxZoom}
+        minZoom={panZoomData.minZoom}
+        chart={props.chart}
+        onRedo={onRedo}
+        onUndo={onUndo}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+        onZoomReset={onZoomReset}
+        onDeleteNodes={props.onDeleteNodes}
+        canRedo={props.canRedo}
+        canUndo={props.canUndo}
+      />
+    </DiagramContext.Provider>
   );
 };

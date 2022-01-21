@@ -4,7 +4,7 @@ import { NodePort } from "./Port";
 import {
   INode,
   ILink,
-  IOnDragNodeEvent,
+  IOnDragNodeStopEvent,
   IOnEndConnection,
   IOnStartConnection,
   IOnNodeSelectionChanged,
@@ -23,9 +23,9 @@ import { ActionButton } from "./ActionButton";
 export interface INodeProps {
   node: ExtendedNode;
   links: Array<ILink>;
-  onDragNodeStop: (evt: IOnDragNodeEvent) => void;
   onStartConnection: (evt: IOnStartConnection) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
+  onDragNodeStop: (evt: IOnDragNodeStopEvent) => void;
   onNodeSelectionChanged: (evt: IOnNodeSelectionChanged) => void;
   onNodeSizeChanged: (evt: IOnNodeSizeChanged) => void;
   onNodeSettings: (node: INode) => void;
@@ -67,20 +67,20 @@ export const Node = React.memo(
       },
     });
 
-    const portKeys = Object.keys(node.ports || {}).sort(
-      (p1, p2) => node.ports[p2].index - node.ports[p1].index
-    );
-
-    const setCheckedCB = (event: any) => {
-      setChecked(event.target.checked);
-    };
-
     const onNodeSettings = () => {
       props.onNodeSettings(node);
     };
 
     const onNodeDelete = () => {
       props.onNodeDelete(node.id);
+    };
+
+    const portKeys = Object.keys(node.ports || {}).sort(
+      (p1, p2) => node.ports[p2].index - node.ports[p1].index
+    );
+
+    const setCheckedCB = (event: any) => {
+      setChecked(event.target.checked);
     };
 
     const nodeSize = `${props.maxNodeSize}px`;
@@ -195,11 +195,18 @@ interface INodeHeaderProps {
   title: string;
   onDelete: () => void;
   onSettings: () => void;
-  preventRemoval? : boolean;
+  preventRemoval?: boolean;
 }
 
 export const NodeHeader = (props: INodeHeaderProps) => {
-  const { checked, onCheckedChange, title, onDelete, onSettings, preventRemoval } = props;
+  const {
+    checked,
+    onCheckedChange,
+    title,
+    onDelete,
+    onSettings,
+    preventRemoval,
+  } = props;
   return (
     <Box
       round={{ corner: "top", size: "small" }}
@@ -244,13 +251,15 @@ export const NodeHeader = (props: INodeHeaderProps) => {
             onClick={onSettings}
             size="small"
           />
-          {!preventRemoval && <ActionButton
-            plain
-            style={{ padding: "2px" }}
-            icon={<Trash size="20" />}
-            onClick={onDelete}
-            size="small"
-          />}
+          {!preventRemoval && (
+            <ActionButton
+              plain
+              style={{ padding: "2px" }}
+              icon={<Trash size="20" />}
+              onClick={onDelete}
+              size="small"
+            />
+          )}
         </Box>
       </Box>
     </Box>
