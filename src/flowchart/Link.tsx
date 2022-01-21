@@ -1,8 +1,12 @@
 import * as React from "react";
-import { IPosition, INode } from "./definitions";
+import {
+  IPosition,
+  INode,
+  IOnConnection,
+  IChart,
+  IOnHighlightLinkEvent,
+} from "./definitions";
 import { ThemeContext } from "grommet";
-import { ActionButton } from "./ActionButton";
-import { Cycle } from "grommet-icons";
 import { DispatcherContext } from "./reducer";
 
 export interface ILinkProps {
@@ -10,7 +14,6 @@ export interface ILinkProps {
   nodeFrom: INode;
   nodeTo: INode;
   id: string;
-  creating?: boolean;
   portHeight: number;
   onDeleteLink?: (id: string) => void;
 }
@@ -28,12 +31,78 @@ const svgStyle: React.CSSProperties = {
   zIndex: 0,
 };
 
+const svgStyleNew: React.CSSProperties = {
+  ...svgStyle,
+  zIndex: 500,
+};
+
+export const NewLink = (props: { portHeight: number; chart: IChart }) => {
+  const theme: any = React.useContext(ThemeContext);
+  const [connection, setConnection] = React.useState<IOnConnection>();
+  const { bus } = React.useContext(DispatcherContext);
+
+  React.useEffect(() => {
+    const handler = bus.subscribe("evt-connection", (evt: IOnConnection) => {
+      setConnection(evt);
+    });
+    return () => {
+      bus.unSubscribe("evt-connection", handler);
+    };
+    // eslint-disable-next-line
+  }, []);
+
+  if (!connection) {
+    return null;
+  }
+
+  const nodeFrom = props.chart.nodes[connection.nodeFromId];
+  const portIndex = nodeFrom.ports[connection.portFromId].index;
+  const { startPos, endPos } = calculatePosition(
+    nodeFrom,
+    props.portHeight,
+    nodeFrom.position,
+    connection.positionTo,
+    portIndex,
+    true
+  );
+  const points = defaultPath(startPos, endPos);
+
+  return (
+    <React.Fragment>
+      <svg style={svgStyleNew}>
+        <defs>
+          <marker
+            id={`lmark-newConnection`}
+            viewBox="0 0 10 10"
+            refX="5"
+            refY="5"
+            markerWidth="4"
+            markerHeight="4"
+            orient="auto"
+          >
+            <path
+              d="M 0 0 L 10 5 L 0 10 z"
+              fill={theme.global.colors["accent-1"]}
+            />
+          </marker>
+        </defs>
+        <path
+          markerEnd={`url(#lmark-newConnection`}
+          d={points}
+          stroke={theme.global.colors["accent-1"]}
+          strokeWidth="4"
+          fill="none"
+        />
+      </svg>
+    </React.Fragment>
+  );
+};
+
 export const Link = (props: ILinkProps) => {
   const theme: any = React.useContext(ThemeContext);
   const { bus } = React.useContext(DispatcherContext);
   const fromId = props.nodeFrom.id;
   const toId = props.nodeTo.id;
-  const fromToKey = `${fromId}-${toId}`;
   const fromFromProps = props.nodeFrom.position;
   const toFromProps = props.nodeTo.position;
   const fromRef = React.useRef(fromFromProps);
@@ -51,7 +120,10 @@ export const Link = (props: ILinkProps) => {
         return;
       }
 
-      if (id === fromId) {
+      if (id === fromId && id === toId) {
+        fromRef.current = position;
+        toRef.current = position;
+      } else if (id === fromId) {
         fromRef.current = position;
       } else {
         toRef.current = position;
@@ -62,21 +134,17 @@ export const Link = (props: ILinkProps) => {
         props.portHeight,
         fromRef.current,
         toRef.current,
-        portIndex,
-        props.creating
+        portIndex
       );
       const points = defaultPath(startPos, endPos);
       lineEl.current?.setAttribute("d", points);
     };
 
     const mHandler = bus.subscribe("evt-nodedrag", nodeMovingListener);
-    // const sHandler = bus.subscribe("evt-singleDrag", nodeMovingListener);
     return () => {
       bus.unSubscribe("evt-nodedrag", mHandler);
-      // bus.unSubscribe("evt-multiDrag", mHandler);
     };
-    // eslint-disable-next-line
-  }, [fromToKey, props.nodeFrom, props.creating, portIndex, props.portHeight]);
+  });
 
   React.useEffect(() => {
     fromRef.current = fromFromProps;
@@ -86,55 +154,34 @@ export const Link = (props: ILinkProps) => {
     toRef.current = toFromProps;
   }, [toFromProps]);
 
-  const onDelete = () => {
-    if (props.onDeleteLink) {
-      props.onDeleteLink(props.id);
-    }
-  };
-
-  // const onHover = () => {
-  //   (svgEl.current as any).style.zIndex = "500";
-  //   (markerEl.current as any).style.fill = theme.global.colors["accent-1"];
-  //   (lineEl.current as any).style.stroke = theme.global.colors["accent-1"];
-  // };
-
-  // const onOut = () => {
-  //   (svgEl.current as any).style.zIndex = "0";
-  //   (markerEl.current as any).style.fill = theme.global.colors.connection;
-  //   (lineEl.current as any).style.stroke = theme.global.colors.connection;
-  // };
+  React.useEffect(() => {
+    const handler = bus.subscribe(
+      "evt-highlightLink",
+      (evt: IOnHighlightLinkEvent) => {
+        if (evt.key === `${props.nodeFrom.id}-${props.portFrom}`) {
+          (svgEl.current as any).style.zIndex = evt.highlight ? "500" : "0";
+          (markerEl.current as any).style.fill =
+            theme.global.colors[evt.highlight ? "accent-1" : "connection"];
+          (lineEl.current as any).style.stroke =
+            theme.global.colors[evt.highlight ? "accent-1" : "connection"];
+        }
+      }
+    );
+    return () => {
+      bus.unSubscribe("evt-highlightLink", handler);
+    };
+    // eslint-disable-next-line
+  }, []);
 
   const { startPos, endPos } = calculatePosition(
     props.nodeFrom,
     props.portHeight,
     fromRef.current,
     toRef.current,
-    portIndex,
-    props.creating
+    portIndex
   );
 
   if (!startPos || !endPos) return null;
-
-  if (toId === fromId) {
-    return (
-      <ActionButton
-        icon={<Cycle size="24" />}
-        plain
-        bgColor="#fff"
-        fontColor="accent-1"
-        tip="remove cycle link"
-        style={{
-          position: "absolute",
-          top: startPos.y - 12,
-          left: startPos.x - 12,
-          padding: "2px",
-          zIndex: 110,
-        }}
-        onClick={onDelete}
-        size="small"
-      />
-    );
-  }
 
   // implement custom path functions here
   const points = defaultPath(startPos, endPos);

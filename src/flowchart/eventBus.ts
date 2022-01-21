@@ -18,7 +18,7 @@ const subscribe = (
   _bus.addEventListener(
     event,
     cb as EventListenerOrEventListenerObject,
-    options
+    options || { passive: true }
   );
   return cb;
 };

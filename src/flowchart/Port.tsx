@@ -1,15 +1,10 @@
 import * as React from "react";
 import styled from "styled-components";
 import DiagramContext from "./Context";
-import {
-  IPort,
-  ILink,
-  INode,
-  IOnStartConnection,
-  IOnEndConnection,
-} from "./definitions";
+import { IPort, ILink, INode, IOnEndConnection } from "./definitions";
 import { isEqual, throttle } from "lodash";
 import { Box, Text } from "grommet";
+import { DispatcherContext } from "./reducer";
 
 const PORT_HEIGHT = 30;
 export const PORT_OFFSET_Y = 35;
@@ -105,7 +100,6 @@ export interface INodePortProps {
   node: INode;
   canvasId: string;
   allowMultiple: boolean;
-  onStartConnection: (evt: IOnStartConnection) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
   renderPort?: (port: IPort) => JSX.Element;
   hidePort?: boolean;
@@ -128,6 +122,7 @@ export const PortContainer = (props: IPortContentProps & { children: any }) => {
 export const NodePort = React.memo(
   function NodePortInternal(props: INodePortProps) {
     const context = React.useContext(DiagramContext);
+    const { dispatcher: dispatch } = React.useContext(DispatcherContext);
     const port = props.port;
     const node = props.node;
 
@@ -154,15 +149,12 @@ export const NodePort = React.memo(
         };
 
         requestAnimationFrame(() =>
-          props.onStartConnection({
-            newLink: {
-              from: {
-                nodeId: node.id,
-                portId: port.id,
-              },
-              id: "newLink",
-              to: "",
-              posTo: to,
+          dispatch({
+            type: "evt-connection",
+            payload: {
+              nodeFromId: node.id,
+              positionTo: to,
+              portFromId: port.id,
             },
           })
         );
@@ -189,6 +181,10 @@ export const NodePort = React.memo(
         // ensure mouse up comes last and no other mousedown will be queued after it
         // causing a double line
         const upTimeout = setTimeout(() => {
+          dispatch({
+            type: "evt-connection",
+            payload: undefined,
+          });
           props.onEndConnection({ link, portLinks: props.links });
           clearTimeout(upTimeout);
         }, 100);
@@ -202,10 +198,28 @@ export const NodePort = React.memo(
       });
     };
 
+    const highlightLink = () => {
+      dispatch({
+        type: "evt-highlightLink",
+        payload: { highlight: true, key: `${props.node.id}-${props.port.id}` },
+      });
+    };
+
+    const turnOffLink = () => {
+      dispatch({
+        type: "evt-highlightLink",
+        payload: { highlight: false, key: `${props.node.id}-${props.port.id}` },
+      });
+    };
+
     return (
       <PortContainer port={props.port} renderPort={props.renderPort}>
         {!props.hidePort && (
-          <OutputPort onPointerDown={handleMouseDown}>
+          <OutputPort
+            onPointerDown={handleMouseDown}
+            onMouseEnter={highlightLink}
+            onMouseLeave={turnOffLink}
+          >
             <PortOuter className="outer-port">
               <PortInner
                 id={`${node.id}-${port.id}`}

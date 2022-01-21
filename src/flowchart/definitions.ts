@@ -86,10 +86,6 @@ export interface IOnDragNodeStopEvent {
   multi: boolean;
 }
 
-export interface IOnStartConnection {
-  newLink: ILink;
-}
-
 export interface IOnEndConnection {
   link: ILink;
   portLinks: ILink[];
@@ -132,6 +128,8 @@ export type ChartEventBusUnsubscibeHandle = (event: CustomEvent) => void;
 export type ChartEvents =
   | "evt-stateChanged"
   | "evt-nodedrag"
+  | "evt-connection"
+  | "evt-highlightLink"
   | "evt-toggleSidebar";
 
 export interface IToggleSidebarEvent {
@@ -226,10 +224,21 @@ export type IOnNodeDragEvent = {
   multi?: boolean;
 };
 
+export interface IOnConnection {
+  nodeFromId: string;
+  positionTo: IPosition;
+  portFromId: string;
+}
+
+export interface IOnHighlightLinkEvent {
+  highlight: boolean;
+  key: string;
+}
+
 export type DiagramEventArgs =
   | undefined
   | IOnDragNodeStopEvent
-  | IOnStartConnection
+  | IOnConnection
   | IOnEndConnection
   | IOnNodeSelectionChanged
   | IOnAreaSelectionChanged
@@ -239,4 +248,5 @@ export type DiagramEventArgs =
   | string[]
   | IOnNodeDragEvent
   | IToggleSidebarEvent
+  | IOnHighlightLinkEvent
   | { x: number; y: number };

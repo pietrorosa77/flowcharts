@@ -6,7 +6,6 @@ import {
   ILink,
   IOnDragNodeStopEvent,
   IOnEndConnection,
-  IOnStartConnection,
   IOnNodeSelectionChanged,
   IOnNodeSizeChanged,
   IPort,
@@ -23,7 +22,6 @@ import { ActionButton } from "./ActionButton";
 export interface INodeProps {
   node: ExtendedNode;
   links: Array<ILink>;
-  onStartConnection: (evt: IOnStartConnection) => void;
   onEndConnection: (evt: IOnEndConnection) => void;
   onDragNodeStop: (evt: IOnDragNodeStopEvent) => void;
   onNodeSelectionChanged: (evt: IOnNodeSelectionChanged) => void;
@@ -145,7 +143,6 @@ export const Node = React.memo(
                 port={node.ports[key]}
                 allowMultiple={false}
                 renderPort={props.renderPort}
-                onStartConnection={props.onStartConnection}
                 onEndConnection={props.onEndConnection}
               ></NodePort>
             ))}

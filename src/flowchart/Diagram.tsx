@@ -1,18 +1,15 @@
 import * as React from "react";
 import DiagramContext from "./Context";
 import { Node } from "./Node";
-import { Link } from "./Link";
+import { Link, NewLink } from "./Link";
 import {
   IChart,
-  IOnStartConnection,
   IOnEndConnection,
   IOnNodeSelectionChanged,
   IOnAreaSelectionChanged,
   INode,
   IOnNodeSizeChanged,
   IPort,
-  IPosition,
-  ILink,
   IOnDragNodeStopEvent,
 } from "./definitions";
 import { PORT_OFFSET_Y } from "./Port";
@@ -70,7 +67,6 @@ interface IDiagramProps {
 
 export const Diagram = (props: IDiagramProps) => {
   const [canvasId] = React.useState<string>(nanoid(8));
-  const [newLink, setNewLink] = React.useState<ILink>();
   const chart = props.chart;
   const canvas = React.createRef<HTMLDivElement>();
   const [panZoomData, setPanZoomData] = React.useState({
@@ -86,12 +82,7 @@ export const Diagram = (props: IDiagramProps) => {
     props.onDeleteNodes([id]);
   };
 
-  const onStartConnection = (evt: IOnStartConnection) => {
-    setNewLink(evt.newLink);
-  };
-
   const onEndConnection = (evt: IOnEndConnection) => {
-    setNewLink(undefined);
     props.onEndConnection(evt);
   };
 
@@ -110,7 +101,6 @@ export const Diagram = (props: IDiagramProps) => {
         onDragNodeStop={props.onDragNodeStop}
         onNodeSizeChanged={props.onNodeSizeChanged}
         onNodeDelete={onNodeDelete}
-        onStartConnection={onStartConnection}
         onEndConnection={onEndConnection}
         onNodeSettings={props.onNodeSettings}
         highlighted={highlighted.includes(key)}
@@ -137,26 +127,6 @@ export const Diagram = (props: IDiagramProps) => {
         />
       );
     });
-  };
-
-  const renderNewLink = () => {
-    if (!newLink) return null;
-    return (
-      <Link
-        portHeight={PORT_OFFSET_Y}
-        id={newLink.id}
-        portFrom={newLink.from.portId}
-        nodeFrom={chart.nodes[newLink.from.nodeId]}
-        nodeTo={{
-          id: "fakeNode",
-          position: newLink.posTo as IPosition,
-          content: "",
-          title: "",
-          ports: {},
-        }}
-        creating
-      />
-    );
   };
 
   const onBlockDrop = (e: DragEvent) => {
@@ -248,7 +218,7 @@ export const Diagram = (props: IDiagramProps) => {
             >
               {renderNodes()}
               {renderLinks()}
-              {renderNewLink()}
+              <NewLink portHeight={PORT_OFFSET_Y} chart={props.chart} />
             </CanvasInner>
           </AreaSelect>
         </ZoomLayer>
