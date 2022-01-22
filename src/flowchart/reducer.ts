@@ -14,7 +14,6 @@ import {
   IOnDragNodeStopEvent,
   IOnEndConnection,
   IOnNodeSelectionChanged,
-  IOnNodeSizeChanged,
   IPosition,
   SimpleChartAction,
 } from "./definitions";
@@ -115,7 +114,7 @@ export const createReducer = () => {
       case "onNodeSizeChanged":
         ret = onNodeSizeChanged(
           state.chart,
-          action.payload as IOnNodeSizeChanged
+          action.payload as ResizeObserverEntry[]
         );
         break;
       case "onUndo":
@@ -196,23 +195,28 @@ export const onUpdateNode = (chart: IChart, updatedNode: INode): IChart => {
 
 export const onNodeSizeChanged = (
   chart: IChart,
-  evt: IOnNodeSizeChanged
+  evt: ResizeObserverEntry[]
 ): IChart => {
-  const nodechart = chart.nodes[evt.id];
-  const updtNode: INode = {
-    ...nodechart,
-    size: {
-      h: evt.height as number,
-      w: evt.width as number,
-    },
-  };
+
+  const nodes = evt.reduce((acc, c) => {
+    const nodeId = c.target.getAttribute("data-node-id") as string;
+    const node = chart.nodes[nodeId];
+    const updtNode: INode = {
+      ...node,
+      size: {
+        h: c.contentRect.height,
+        w: c.contentRect.width,
+      },
+    };
+    return {
+      ...acc,
+      [`${nodeId}`]: updtNode,
+    };
+  }, chart.nodes);
 
   return {
     ...chart,
-    nodes: {
-      ...chart.nodes,
-      [`${evt.id}`]: updtNode,
-    },
+    nodes,
   };
 };
 

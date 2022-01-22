@@ -5,12 +5,12 @@ import { ExtendedNode, INode, INodePanelEditor, IPort } from "./definitions";
 import { CollapsibleLeftPanel } from "./CollapsibleLeftPanel";
 import { StyledButton } from "./ActionButton";
 import { DefaultPropertyPanelEditor } from "./Index";
+import { EventBusContext } from "./eventBus";
 
 interface IPropertyPanelProps {
-  node?: ExtendedNode;
+
   width: string;
-  onClose: () => void;
-  onNodeUpdated: (node: INode) => void;
+  // onNodeUpdated: (node: INode) => void;
   customData?: { [key: string]: any };
   customEditors?: Map<string, (props: INodePanelEditor) => JSX.Element>;
   renderNode?: (node: INode) => JSX.Element;
@@ -24,9 +24,6 @@ interface IPropertyPanelProps {
 }
 
 export const PropertyPanel = ({
-  node,
-  onClose,
-  onNodeUpdated,
   customData,
   customEditors,
   nodePropertiesValidator,
@@ -35,40 +32,45 @@ export const PropertyPanel = ({
   renderPort,
   width,
 }: IPropertyPanelProps) => {
-  const [nodeState, setNodeState] = React.useState<ExtendedNode | undefined>(
-    node
-  );
-  const nodeId = node ? node.id : undefined;
-  const opened = node ? true : false;
+  const bus = React.useContext(EventBusContext);
+  const [nodeState, setNodeState] = React.useState<ExtendedNode>();
   const customPanels = customEditors || new Map();
 
+
+  //const [opened, setOpened] = React.useState(initiallyOpened);
+
   React.useEffect(() => {
-    if (!node) {
-      return;
-    }
-    setNodeState(node);
-    // eslint-disable-next-line
-  }, [nodeId]);
+    const handler = bus.subscribe(
+      "evt-nodesettings",
+      (evt: ExtendedNode) => {
+        setNodeState(evt);
+      }
+    );
+    return () => bus.unSubscribe("evt-nodesettings", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onNodeChange = (evt: ExtendedNode) => {
-    setNodeState({ ...node, ...evt });
+    setNodeState({ ...nodeState, ...evt });
   };
 
   const onSave = () => {
-    onNodeUpdated(nodeState as ExtendedNode);
-    onClose();
+    bus.emit("evt-nodeupdated", nodeState);
+    setNodeState(undefined);
   };
 
   const NodePanel = nodeState
     ? customPanels.get(nodeState.type) || DefaultPropertyPanelEditor
     : null;
 
+  const onClose = () => setNodeState(undefined);
+
   return (
     <CollapsibleLeftPanel
-      opened={opened}
+      opened={!!nodeState}
       width={width}
       onClose={onClose}
-      title={`Node ${node?.title} settings`}
+      title={`Node ${nodeState?.title} settings`}
     >
       <div
         style={{
@@ -80,9 +82,9 @@ export const PropertyPanel = ({
         }}
         className="ppanel"
       >
-        {opened && node && NodePanel && (
+        {nodeState && NodePanel && (
           <NodePanel
-            key={`nodepanel-${(node as INode).id}`}
+            key={`nodepanel-${nodeState.id}`}
             node={nodeState as INode}
             customData={customData}
             renderNode={renderNode}

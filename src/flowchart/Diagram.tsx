@@ -2,14 +2,17 @@ import * as React from "react";
 import { Node } from "./Node";
 import { Link, NewLink } from "./Link";
 import {
-  IChart,
   IOnEndConnection,
   IOnNodeSelectionChanged,
   IOnAreaSelectionChanged,
   INode,
-  IOnNodeSizeChanged,
   IPort,
   IOnDragNodeStopEvent,
+  IFlowchartState,
+  SimpleChartAction,
+  ChartMiddlewhare,
+  Actions,
+  DiagramEventArgs,
 } from "./definitions";
 import { PORT_OFFSET_Y } from "./Port";
 import { ZoomLayer } from "./Zoom";
@@ -19,6 +22,8 @@ import { nanoid } from "nanoid";
 import { getNodeRenderer } from "./utils";
 import { BottomCommands } from "./BottomCommands";
 import { EventBusContext } from "./eventBus";
+import { useChartReducer } from "./reducer";
+import { cloneDeep } from "lodash";
 
 export const CanvasOuter = styled.div<any>`
   position: relative;
@@ -30,8 +35,7 @@ export const CanvasOuter = styled.div<any>`
 ` as any;
 
 export const CanvasInner = styled.div`
-  box-shadow: ${(props) =>
-    `0 0 90px -9px ${props.theme.global.colors["light-1"]};`};
+
   background-image: ${(props) => `
   linear-gradient(${props.theme.global.colors.canvasGridSquare} 2px, transparent 2px), 
   linear-gradient(90deg, ${props.theme.global.colors.canvasGridSquare} 2px, transparent 2px), 
@@ -46,38 +50,85 @@ export const CanvasInner = styled.div`
 ` as any;
 
 interface IDiagramProps {
-  chart: IChart;
   highlighted?: Array<string>;
   nodeSize?: number;
-  onDragNodeStop: (evt: IOnDragNodeStopEvent) => void;
-  onEndConnection: (evt: IOnEndConnection) => void;
-  onNodeSelectionChanged: (evt: IOnNodeSelectionChanged) => void;
-  onAreaSelectionChange: (evt: IOnAreaSelectionChanged) => void;
-  onNodeAdded: (evt: INode) => void;
-  onNodeSizeChanged: (evt: IOnNodeSizeChanged) => void;
-  onDeleteLink: (id: string) => void;
-  onNodeSettings: (node: INode) => void;
-  onDeleteNodes: (ids: string[]) => void;
   renderNode?: (node: INode) => JSX.Element;
   renderPort?: (port: IPort) => JSX.Element;
   sidebarOpened?: boolean;
-  canUndo: boolean;
-  canRedo: boolean;
+  reducer: (
+    state: IFlowchartState,
+    action: SimpleChartAction
+  ) => IFlowchartState;
+  initialState: IFlowchartState;
+  middlewares: ChartMiddlewhare[];
 }
 
 export const Diagram = (props: IDiagramProps) => {
   const bus = React.useContext(EventBusContext);
   const [canvasId] = React.useState<string>(nanoid(8));
-  const chart = props.chart;
   const canvas = React.createRef<HTMLDivElement>();
   const highlighted = props.highlighted || [];
 
-  const onNodeDelete = (id: string) => {
-    props.onDeleteNodes([id]);
+  const [appState, dispatch] = useChartReducer(
+    props.reducer,
+    props.initialState,
+    props.middlewares,
+    bus
+  );
+  const chart= appState.chart;
+
+  const onDiagramEvent = (type: Actions, payload: DiagramEventArgs) => {
+    dispatch({ type, payload });
   };
 
-  const onEndConnection = (evt: IOnEndConnection) => {
-    props.onEndConnection(evt);
+  const onDeleteNodes = (evt: string[]) => {
+    onNodeSettings(undefined);
+    onDiagramEvent("onDeleteNodes", evt);
+  };
+
+  const onNodeUpdated = (evt: INode) => onDiagramEvent("onUpdateNode", evt);
+
+  const onDragNodeStop = (evt: IOnDragNodeStopEvent) =>
+    onDiagramEvent("onDragNodeStop", evt);
+
+  const onNodeSelectionChanged = (evt: IOnNodeSelectionChanged) =>
+    onDiagramEvent("onNodeSelectionChanged", evt);
+
+  const onNodeSizeChanged = (evt: ResizeObserverEntry[]) =>
+    onDiagramEvent("onNodeSizeChanged", evt);
+
+  const onEndConnection = (evt: IOnEndConnection) =>
+    onDiagramEvent("onEndConnection", evt);
+
+  const onAreaSelectionChange = (evt: IOnAreaSelectionChanged) =>
+    onDiagramEvent("onAreaSelectionChanged", evt);
+
+  const onDeleteLink = (evt: string) => onDiagramEvent("onDeleteLink", evt);
+
+  const onNodeAdded = (evt: INode) => onDiagramEvent("onNodeAdded", evt);
+
+  const onNodeSettings = (evt: INode | undefined) => {
+    bus.emit("evt-nodesettings", cloneDeep(evt));
+  }
+
+  React.useEffect(() => {
+    const unsub = bus.subscribe(
+      "evt-nodessizechanged",
+      onNodeSizeChanged
+    );
+    const nodeUpdt = bus.subscribe(
+      "evt-nodeupdated",
+      onNodeUpdated
+    );
+    return () => {
+      bus.unSubscribe("evt-nodessizechanged", unsub);
+      bus.unSubscribe("evt-nodeupdated", nodeUpdt);
+    };
+     // eslint-disable-next-line
+  }, []);
+
+  const onNodeDelete = (id: string) => {
+    onDeleteNodes([id]);
   };
 
   const renderNodes = () => {
@@ -91,12 +142,11 @@ export const Diagram = (props: IDiagramProps) => {
         links={Object.keys(chart.links)
           .filter((k) => chart.links[k].from.nodeId === key)
           .map((linkId) => chart.links[linkId])}
-        onNodeSelectionChanged={props.onNodeSelectionChanged}
-        onDragNodeStop={props.onDragNodeStop}
-        onNodeSizeChanged={props.onNodeSizeChanged}
+        onNodeSelectionChanged={onNodeSelectionChanged}
+        onDragNodeStop={onDragNodeStop}
         onNodeDelete={onNodeDelete}
         onEndConnection={onEndConnection}
-        onNodeSettings={props.onNodeSettings}
+        onNodeSettings={onNodeSettings}
         highlighted={highlighted.includes(key)}
         renderPort={props.renderPort}
       >
@@ -117,7 +167,7 @@ export const Diagram = (props: IDiagramProps) => {
           portFrom={link.from.portId}
           nodeFrom={chart.nodes[link.from.nodeId]}
           nodeTo={chart.nodes[link.to]}
-          onDeleteLink={props.onDeleteLink}
+          onDeleteLink={onDeleteLink}
         />
       );
     });
@@ -142,7 +192,7 @@ export const Diagram = (props: IDiagramProps) => {
       x,
       y,
     };
-    props.onNodeAdded(newNode);
+    onNodeAdded(newNode);
   };
 
   const onDragOver = (e: MouseEvent) => {
@@ -154,8 +204,8 @@ export const Diagram = (props: IDiagramProps) => {
       <CanvasOuter className="flowDiagramCanvasOuter" autoCenter>
         <ZoomLayer width="100%" height="100%">
           <AreaSelect
-            onAreaSelectionChange={props.onAreaSelectionChange}
-            nodes={props.chart.nodes}
+            onAreaSelectionChange={onAreaSelectionChange}
+            nodes={chart.nodes}
           >
             <CanvasInner
               ref={canvas}
@@ -166,17 +216,17 @@ export const Diagram = (props: IDiagramProps) => {
             >
               {renderNodes()}
               {renderLinks()}
-              <NewLink portHeight={PORT_OFFSET_Y} chart={props.chart} />
+              <NewLink portHeight={PORT_OFFSET_Y} chart={chart} />
             </CanvasInner>
           </AreaSelect>
         </ZoomLayer>
       </CanvasOuter>
       <BottomCommands
         sidebarOpened={props.sidebarOpened}
-        chart={props.chart}
-        onDeleteNodes={props.onDeleteNodes}
-        canRedo={props.canRedo}
-        canUndo={props.canUndo}
+        chart={chart}
+        onDeleteNodes={onDeleteNodes}
+        canRedo={appState.canRedo}
+        canUndo={appState.canUndo}
       />
     </>
   );

@@ -6,7 +6,6 @@ import {
   IOnDragNodeStopEvent,
   IOnEndConnection,
   IOnNodeSelectionChanged,
-  IOnNodeSizeChanged,
   IPort,
   ExtendedNode,
 } from "./definitions";
@@ -15,7 +14,7 @@ import { NodeDragger } from "./NodeDragger";
 import { Configure, Trash } from "grommet-icons";
 import { isEqual, isFunction } from "lodash";
 import { blockEvent } from "./utils";
-import useResizeObserver from "use-resize-observer";
+import { EventBusContext } from "./eventBus";
 
 export interface INodeProps {
   node: ExtendedNode;
@@ -23,7 +22,6 @@ export interface INodeProps {
   onEndConnection: (evt: IOnEndConnection) => void;
   onDragNodeStop: (evt: IOnDragNodeStopEvent) => void;
   onNodeSelectionChanged: (evt: IOnNodeSelectionChanged) => void;
-  onNodeSizeChanged: (evt: IOnNodeSizeChanged) => void;
   onNodeSettings: (node: INode) => void;
   onNodeDelete: (id: string) => void;
   canvasId: string;
@@ -37,7 +35,9 @@ export interface INodeProps {
 export const Node = React.memo(
   function NodeInner(props: INodeProps) {
     const node = props.node;
+    const nodeRef = React.useRef<HTMLDivElement>();
     const theme: any = React.useContext(ThemeContext);
+    const bus = React.useContext(EventBusContext);
     const [checked, setChecked] = React.useState(props.selected);
 
     React.useEffect(() => {
@@ -56,11 +56,14 @@ export const Node = React.memo(
       // eslint-disable-next-line
     }, [props.selected]);
 
-    const { ref } = useResizeObserver({
-      onResize: ({ width, height }) => {
-        props.onNodeSizeChanged({ id: node.id, width, height });
-      },
-    });
+    React.useLayoutEffect(() => {
+      const node = nodeRef.current;
+      bus.observeElementSize(node as HTMLDivElement);
+      return () => {
+        bus.unobserveElementSize(node as HTMLDivElement);
+      };
+      // eslint-disable-next-line
+    }, []);
 
     const onNodeSettings = () => {
       props.onNodeSettings(node);
@@ -105,7 +108,7 @@ export const Node = React.memo(
           }}
           id={`node-${node.id}`}
           data-node-id={node.id}
-          ref={ref as any}
+          ref={nodeRef as any}
         >
           <NodeHeader
             title={node.title}

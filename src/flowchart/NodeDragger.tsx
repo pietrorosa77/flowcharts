@@ -69,14 +69,13 @@ export function NodeDragger(props: INodeDraggerProps) {
         draggedPosition.current.y + delta.y
       );
       draggedPosition.current = newPosition;
+      updateVisuals(newPosition, true);
       bus.emit("evt-nodedrag", {
         shouldSkip: true,
         id: nodeId,
         position: newPosition,
         multi: true,
       });
-
-      updateVisuals(newPosition, true);
     };
     const handler = bus.subscribe("evt-nodedrag", multidragMovingListener);
     return () => {

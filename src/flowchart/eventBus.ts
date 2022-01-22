@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { createContext } from "react";
 import {
   ChartEventBusUnsubscibeHandle,
@@ -6,7 +7,7 @@ import {
 } from "./definitions";
 
 let _bus: Comment;
-
+let _observer: ResizeObserver;
 let _zoomscale = { scale: 1, x: 0, y: 0 };
 
 const subscribe = (
@@ -42,7 +43,22 @@ const emit = (type: ChartEvents, data: any) => {
   const event = new CustomEvent(type, {
     detail: data,
   });
-  _bus.dispatchEvent(event);
+  requestAnimationFrame(() => _bus.dispatchEvent(event));
+};
+
+const observeElementSize = (
+  element: Element,
+  options?: ResizeObserverOptions | undefined
+) => {
+  _observer.observe(element, options);
+};
+
+const unobserveElementSize = (element: Element) => {
+  _observer.unobserve(element);
+};
+
+const stopSizeObserver = () => {
+  _observer.disconnect();
 };
 
 const storeDiagramZoomScale = (data: {
@@ -57,7 +73,15 @@ const getDiagramZoomScale = () => _zoomscale || { scale: 1, x: 0, y: 0 };
 
 export const createBus = (): IChartEventBus => {
   if (!_bus) {
-    _bus = document.appendChild(new Comment("dmbtFlowchart-event-bus"));
+    _bus = document.appendChild(
+      new Comment(`dmbtFlowchart-event-bus${nanoid(10)}`)
+    );
+  }
+
+  if (!_observer) {
+    _observer = new ResizeObserver((changes: ResizeObserverEntry[]) =>
+      emit("evt-nodessizechanged", changes)
+    );
   }
 
   return {
@@ -66,6 +90,9 @@ export const createBus = (): IChartEventBus => {
     emit,
     storeDiagramZoomScale,
     getDiagramZoomScale,
+    observeElementSize,
+    unobserveElementSize,
+    stopSizeObserver,
   };
 };
 

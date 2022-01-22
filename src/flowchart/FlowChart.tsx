@@ -3,27 +3,20 @@ import { Diagram } from "./Diagram";
 import {
   Actions,
   ChartMiddlewhare,
-  DiagramEventArgs,
   ExtendedNode,
   IChart,
   IFlowchartState,
   INode,
   INodePanelEditor,
-  IOnAreaSelectionChanged,
-  IOnDragNodeStopEvent,
-  IOnEndConnection,
-  IOnNodeSelectionChanged,
-  IOnNodeSizeChanged,
   IPort,
   SimpleChartAction,
 } from "./definitions";
 import { Box, Grommet } from "grommet";
-import { createReducer, getInitialState, useChartReducer } from "./reducer";
+import { createReducer, getInitialState } from "./reducer";
 import { Sidebar } from "./Sidebar";
 import { PropertyPanel } from "./PropertyPanel";
 import { EditorTheme, FlowchartTheme } from "./defaultTheme";
 import { deepMerge } from "grommet/utils";
-import { cloneDeep } from "lodash";
 import { createGlobalStyle } from "styled-components";
 import { EventBusContext, createBus } from "./eventBus";
 import { logMiddleware, thunkMiddleware } from "./middlewares";
@@ -125,57 +118,6 @@ const GlobalStyle = createGlobalStyle`
 const ChartEventBus = createBus();
 
 function InnerFlowChart(props: IInnerChartProps) {
-  const [panelSettings, setPanelSettings] = React.useState<ExtendedNode>();
-
-  const [appState, dispatch] = useChartReducer(
-    props.reducer,
-    props.initialState,
-    props.middlewares,
-    ChartEventBus
-  );
-
-  const highLightNodes = panelSettings ? [panelSettings.id] : [];
-
-  const onDiagramEvent = (type: Actions, payload: DiagramEventArgs) => {
-    dispatch({ type, payload });
-  };
-
-  const closePanelSettings = () => {
-    setPanelSettings(undefined);
-  };
-
-  const openPanelSettings = (node: INode) => {
-    setPanelSettings(cloneDeep(node));
-  };
-
-  const onDeleteNodes = (evt: string[]) => {
-    if (panelSettings && evt.includes(panelSettings.id)) {
-      closePanelSettings();
-    }
-    onDiagramEvent("onDeleteNodes", evt);
-  };
-
-  const onNodeUpdated = (evt: INode) => onDiagramEvent("onUpdateNode", evt);
-
-  const onDragNodeStop = (evt: IOnDragNodeStopEvent) =>
-    onDiagramEvent("onDragNodeStop", evt);
-
-  const onNodeSelectionChanged = (evt: IOnNodeSelectionChanged) =>
-    onDiagramEvent("onNodeSelectionChanged", evt);
-
-  const onNodeSizeChanged = (evt: IOnNodeSizeChanged) =>
-    onDiagramEvent("onNodeSizeChanged", evt);
-
-  const onEndConnection = (evt: IOnEndConnection) =>
-    onDiagramEvent("onEndConnection", evt);
-
-  const onAreaSelectionChange = (evt: IOnAreaSelectionChanged) =>
-    onDiagramEvent("onAreaSelectionChanged", evt);
-
-  const onDeleteLink = (evt: string) => onDiagramEvent("onDeleteLink", evt);
-
-  const onNodeAdded = (evt: INode) => onDiagramEvent("onNodeAdded", evt);
-
   return (
     <Grommet
       theme={props.theme}
@@ -205,9 +147,6 @@ function InnerFlowChart(props: IInnerChartProps) {
             />
             <PropertyPanel
               width="500px"
-              node={panelSettings}
-              onClose={closePanelSettings}
-              onNodeUpdated={onNodeUpdated}
               customData={props.customData}
               renderNode={props.renderNode}
               renderPort={props.renderPort}
@@ -217,22 +156,12 @@ function InnerFlowChart(props: IInnerChartProps) {
             />
             <Diagram
               nodeSize={props.nodeSize}
-              chart={appState.chart}
               renderNode={props.renderNode}
               renderPort={props.renderPort}
-              highlighted={highLightNodes}
-              onDragNodeStop={onDragNodeStop}
-              onNodeSelectionChanged={onNodeSelectionChanged}
-              onNodeSizeChanged={onNodeSizeChanged}
-              onEndConnection={onEndConnection}
-              onAreaSelectionChange={onAreaSelectionChange}
-              onNodeSettings={openPanelSettings}
-              onDeleteNodes={onDeleteNodes}
-              onDeleteLink={onDeleteLink}
-              onNodeAdded={onNodeAdded}
               sidebarOpened={props.sidebarInitiallyOpened}
-              canRedo={appState.canRedo}
-              canUndo={appState.canUndo}
+              middlewares={props.middlewares}
+              initialState={props.initialState}
+              reducer={props.reducer}
             />
           </Box>
         </Box>

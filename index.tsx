@@ -36,7 +36,7 @@ const onDiagramChanged = (state: any, type: any) => {
     "onRedo",
   ];
   if (actions.includes(type)) {
-    console.log("test");
+  
     // const updtVariables = getAllVariables(state.chart);
     // setVariables(updtVariables);
   }

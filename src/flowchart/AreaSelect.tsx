@@ -49,13 +49,13 @@ export function AreaSelect(props: IAreaSelectProps) {
     const mouseUpHandler = () => {
       const selection = getSelectedNodes({ from, to: pointTo });
       props.onAreaSelectionChange(selection);
-      window.removeEventListener("mouseup", mouseUpHandler, false);
-      window.removeEventListener("mousemove", mouseMoveHandler, false);
+      window.removeEventListener("pointerup", mouseUpHandler, false);
+      window.removeEventListener("pointermove", mouseMoveHandler, false);
       setCoord(undefined);
     };
 
-    window.addEventListener("mouseup", mouseUpHandler, false);
-    window.addEventListener("mousemove", mouseMoveHandler, false);
+    window.addEventListener("pointerup", mouseUpHandler, false);
+    window.addEventListener("pointermove", mouseMoveHandler, false);
   };
 
   const getSelectionBox = (selArea: any) => {
@@ -126,7 +126,7 @@ export function AreaSelect(props: IAreaSelectProps) {
     <div
       role="presentation"
       ref={canvasRef as any}
-      onMouseDownCapture={onMouseDown}
+      onPointerDown={onMouseDown}
       id="dumbot-selectable-canvas"
       style={{
         height: "100%",

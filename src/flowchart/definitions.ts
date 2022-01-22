@@ -96,12 +96,6 @@ export interface IOnNodeSelectionChanged {
   selected: boolean;
 }
 
-export interface IOnNodeSizeChanged {
-  height: number | undefined;
-  width: number | undefined;
-  id: string;
-}
-
 export interface IFloatingPosition {
   top?: number | string;
   left?: number | string;
@@ -132,6 +126,9 @@ export type ChartEvents =
   | "evt-highlightLink"
   | "evt-togglepanzoom"
   | "evt-resetpanzoom"
+  | "evt-nodessizechanged"
+  | "evt-nodesettings"
+  | "evt-nodeupdated"
   | "evt-toggleSidebar";
 
 export interface IToggleSidebarEvent {
@@ -159,6 +156,12 @@ export interface IChartEventBus {
     y: number;
   }) => void;
   getDiagramZoomScale: () => { scale: number; x: number; y: number };
+  observeElementSize: (
+    element: Element,
+    options?: ResizeObserverOptions | undefined
+  ) => void;
+  unobserveElementSize: (element: Element) => void;
+  stopSizeObserver: () => void;
 }
 export type Actions =
   | "onDragNodeStop"
@@ -252,7 +255,7 @@ export type DiagramEventArgs =
   | IOnNodeSelectionChanged
   | IOnAreaSelectionChanged
   | INode
-  | IOnNodeSizeChanged
+  | ResizeObserverEntry[]
   | string
   | string[]
   | IOnNodeDragEvent
