@@ -7,7 +7,7 @@ import {
 
 let _bus: Comment;
 
-let _zoomscale = 1;
+let _zoomscale = { scale: 1, x: 0, y: 0 };
 
 const subscribe = (
   event: ChartEvents,
@@ -45,11 +45,15 @@ const emit = (type: ChartEvents, data: any) => {
   _bus.dispatchEvent(event);
 };
 
-const storeDiagramZoomScale = (scale: number) => {
-  _zoomscale = scale;
+const storeDiagramZoomScale = (data: {
+  scale: number;
+  x: number;
+  y: number;
+}) => {
+  _zoomscale = data;
 };
 
-const getDiagramZoomScale = () => _zoomscale || 1;
+const getDiagramZoomScale = () => _zoomscale || { scale: 1, x: 0, y: 0 };
 
 export const createBus = (): IChartEventBus => {
   if (!_bus) {

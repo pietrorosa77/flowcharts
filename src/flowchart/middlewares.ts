@@ -1,10 +1,4 @@
-import {
-  ChartAction,
-  ChartDispatch,
-  ChartEvents,
-  ChartStore,
-  SimpleChartAction,
-} from "./definitions";
+import { ChartAction, ChartDispatch, ChartStore } from "./definitions";
 
 export function composeMiddleware(...fns: any[]) {
   if (fns.length === 0) return (arg: any) => arg;

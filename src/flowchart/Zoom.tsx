@@ -1,138 +1,87 @@
 import * as React from "react";
-
+import Panzoom, { PanzoomObject } from "@panzoom/panzoom";
+import { EventBusContext } from "./eventBus";
 export interface IPanZoomLayerProps {
   height?: string;
   width?: string;
-  zoom?: number;
   children?: any;
-  x?: number;
-  y?: number;
-  onPan?: (x: number, y: number) => void;
 }
 
 export function ZoomLayer(props: IPanZoomLayerProps) {
-  const [dragData, setDragData] = React.useState({
-    x: 0,
-    y: 0,
-    dx: 0,
-    dy: 0,
-    dragging: false,
-  });
-  const [matrix, setMatrix] = React.useState([
-    props.zoom || 1,
-    0,
-    0,
-    props.zoom || 1,
-    props.x || 0,
-    props.y || 0,
-  ]);
-
-  const panX = matrix[4];
-  const panY = matrix[5];
-  const { dragging, dx, dy, x, y } = dragData;
+  const bus = React.useContext(EventBusContext);
   const container = React.useRef<HTMLDivElement>(null);
-  const element = React.useRef<HTMLDivElement>(null);
-  const [transition, setTransition] = React.useState("none");
+  const panzoom = React.useRef<PanzoomObject>();
+
+  const zoomHandler = (event: any) => {
+    if (!event.shiftKey || !panzoom.current) return;
+    panzoom.current.zoomWithWheel(event);
+  };
+
+  const onPanZoomChange = (event: any) => {
+    bus.storeDiagramZoomScale(event.detail);
+  };
+
+  const enablePanzoom = () => {
+    if (!container.current) {
+      return;
+    }
+
+    const panzoomCurrentData = bus.getDiagramZoomScale();
+
+    panzoom.current = Panzoom(container.current, {
+      maxScale: 5,
+      startScale: panzoomCurrentData.scale,
+      startX: panzoomCurrentData.x,
+      startY: panzoomCurrentData.y,
+    });
+
+    container.current.parentElement?.addEventListener("wheel", zoomHandler, {
+      passive: false,
+    });
+    container.current.addEventListener("panzoomchange", onPanZoomChange);
+  };
+
+  const disablePanzoom = () => {
+    if (!panzoom.current || !container.current) {
+      return;
+    }
+
+    panzoom.current.destroy();
+    container.current.style.cursor = "crosshair";
+    container.current.parentElement?.removeEventListener("wheel", zoomHandler);
+    container.current.removeEventListener("panzoomchange", onPanZoomChange);
+  };
 
   React.useEffect(() => {
-    window.addEventListener("mouseup", onMouseUp, {
-      capture: false,
-      passive: true,
+    const hdRest = bus.subscribe("evt-resetpanzoom", () => {
+      if (panzoom.current) {
+        panzoom.current.setOptions({ startX: 0, startY: 0, startScale: 1 });
+        panzoom.current.reset({
+          animate: true,
+          startX: 0,
+          startY: 0,
+          startScale: 1,
+        });
+        bus.storeDiagramZoomScale({ x: 0, y: 0, scale: 1 });
+      }
+    });
+    const hd = bus.subscribe("evt-togglepanzoom", (enable: boolean) => {
+      if (enable) {
+        enablePanzoom();
+      } else {
+        disablePanzoom();
+      }
     });
     return () => {
-      window.removeEventListener("mouseup", onMouseUp, false);
+      bus.unSubscribe("evt-toggleSidebar", hd);
+      bus.unSubscribe("evt-resetpanzoom", hdRest);
+      disablePanzoom();
     };
     // eslint-disable-next-line
-  }, [dragData, panX, panY, props.zoom]);
-
-  React.useEffect(() => {
-    window.addEventListener("mousemove", throttledMove, {
-      capture: false,
-      passive: true,
-    });
-    return () => {
-      window.removeEventListener("mousemove", throttledMove, false);
-    };
-    // eslint-disable-next-line
-  }, [dragging, dx, dy, x, y, props.zoom]);
-
-  React.useEffect(() => {
-    setTransition("all 0.2s ease-in-out");
-    setMatrix([props.zoom || 1, 0, 0, props.zoom || 1, matrix[4], matrix[5]]);
-    // eslint-disable-next-line
-  }, [props.zoom]);
-
-  React.useEffect(() => {
-    if (matrix[4] === props.x && matrix[5] === props.y) {
-      return;
-    }
-    setMatrix([
-      props.zoom || 1,
-      0,
-      0,
-      props.zoom || 1,
-      props.x || 0,
-      props.y || 0,
-    ]);
-    // eslint-disable-next-line
-  }, [props.x, props.y]);
-
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (e.shiftKey && e.buttons !== 1) {
-      return;
-    }
-
-    setTransition("none");
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
-    e.preventDefault();
-
-    const newDragData = {
-      dx: matrix[4],
-      dy: matrix[5],
-      x: e.pageX,
-      y: e.pageY,
-      cursor: "grabbing",
-      dragging: true,
-    };
-
-    setDragData(() => newDragData);
-  };
-
-  const mouseMove = (e: any) => {
-    if (!dragging) {
-      return;
-    }
-
-    const deltaX = x - e.pageX;
-    const deltaY = y - e.pageY;
-    const newZoom = props.zoom || 1;
-    const newMatrix = [newZoom, 0, 0, newZoom, dx - deltaX, dy - deltaY];
-
-    setMatrix(() => newMatrix);
-  };
-
-  const throttledMove = (e: any) => requestAnimationFrame(() => mouseMove(e));
-
-  const onMouseUp = () => {
-    if (!dragData.dragging) {
-      return;
-    }
-
-    setDragData((oldData) => ({
-      ...oldData,
-      dragging: false,
-      cursor: "default",
-    }));
-    if (props.onPan) {
-      props.onPan(matrix[4], matrix[5]);
-    }
-  };
+  }, []);
 
   return (
     <div
-      className={`pan-container ${dragging ? "grab-element" : ""}`}
-      onMouseDown={onMouseDown}
       role="presentation"
       ref={container}
       style={{
@@ -141,16 +90,7 @@ export function ZoomLayer(props: IPanZoomLayerProps) {
         width: props.width,
       }}
     >
-      <div
-        ref={element}
-        style={{
-          transform: `matrix(${matrix.toString()})`,
-          transformOrigin: "top",
-          transition,
-        }}
-      >
-        {props.children}
-      </div>
+      {props.children}
     </div>
   );
 }

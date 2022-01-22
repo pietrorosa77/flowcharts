@@ -107,7 +107,7 @@ export function NodeDragger(props: INodeDraggerProps) {
 
     const canvasRect = canvas.getBoundingClientRect();
     const nodeRect = hatRef.current?.getBoundingClientRect() as DOMRect;
-    const scale: number = bus.getDiagramZoomScale()|| 1;
+    const scale: number = bus.getDiagramZoomScale().scale || 1;
     const canvasSize = {
       w: canvasRect.width / scale,
       h: canvasRect.height / scale,
@@ -199,8 +199,8 @@ export function NodeDragger(props: INodeDraggerProps) {
   };
 
   const className = props.selected
-    ? `flowDiagramNodeDraggerHat drag-hat-selected`
-    : `flowDiagramNodeDraggerHat`;
+    ? `flowDiagramNodeDraggerHat drag-hat-selected panzoom-exclude`
+    : `flowDiagramNodeDraggerHat panzoom-exclude`;
 
   return (
     <div

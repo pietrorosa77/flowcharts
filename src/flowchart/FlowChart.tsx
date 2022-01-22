@@ -99,16 +99,25 @@ const GlobalStyle = createGlobalStyle`
     }
   }
   .flowDiagramButtonBarAction {
+    cursor: pointer;
     &.inactive {
+      cursor: not-allowed;
       stroke: ${(props) =>
         (props.theme as any).global.colors["dark-2"]} !important;
       fill: ${(props) =>
         (props.theme as any).global.colors["dark-2"]} !important;
     }
 
+    &.off {
+      stroke: ${(props) => (props.theme as any).global.colors["light-6"]};
+      fill: ${(props) => (props.theme as any).global.colors["light-6"]};
+    }
+
     &.on,
     &:hover {
       stroke: ${(props) => (props.theme as any).global.colors["accent-1"]};
+      fill: ${(props) => (props.theme as any).global.colors["accent-1"]};
+
     }
   }
 `;

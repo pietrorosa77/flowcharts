@@ -13,15 +13,15 @@ export function AreaSelect(props: IAreaSelectProps) {
   const [coord, setCoord] = React.useState() as any;
   const bus = React.useContext(EventBusContext);
   const theme: any = React.useContext(ThemeContext);
+  const canvasRef = React.useRef<HTMLElement>();
 
   const onMouseDown = (startEvent: React.MouseEvent) => {
-    if (!startEvent.shiftKey) {
+    const scale: number = bus.getDiagramZoomScale().scale || 1;
+    if (!canvasRef.current) {
       return;
     }
 
-    const scale: number = bus.getDiagramZoomScale() || 1;
-
-    const canvas: any = document.getElementById("dumbot-selectable-canvas");
+    const canvas = canvasRef.current;
     const canvasRect = canvas.getBoundingClientRect();
 
     startEvent.preventDefault();
@@ -79,6 +79,9 @@ export function AreaSelect(props: IAreaSelectProps) {
   };
 
   const selectionBoxRect = (selArea: any) => {
+    if (!selArea.to || !selArea.from) {
+      return undefined;
+    }
     const left = Math.min(selArea.from.x, selArea.to.x) - 1;
     const top = Math.min(selArea.from.y, selArea.to.y) - 1;
     const width = Math.abs(selArea.from.x - selArea.to.x) + 1;
@@ -122,7 +125,8 @@ export function AreaSelect(props: IAreaSelectProps) {
   return (
     <div
       role="presentation"
-      onMouseDown={onMouseDown}
+      ref={canvasRef as any}
+      onMouseDownCapture={onMouseDown}
       id="dumbot-selectable-canvas"
       style={{
         height: "100%",
@@ -150,9 +154,14 @@ const lineIntersects = (lineA: Array<number>, lineB: Array<number>): boolean =>
  * @private
  */
 const boxIntersects = (
-  boxA: { left: number; top: number; width: number; height: number },
-  boxB: { left: number; top: number; width: number; height: number }
+  boxA:
+    | { left: number; top: number; width: number; height: number }
+    | undefined,
+  boxB: { left: number; top: number; width: number; height: number } | undefined
 ): boolean => {
+  if (!boxA || !boxB) {
+    return false;
+  }
   // calculate coordinates of all points
   const boxAProjection = {
     x: [boxA.left, boxA.left + boxA.width],

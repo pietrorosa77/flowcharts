@@ -16,6 +16,7 @@
     "build": "tsc --build \"./libBuildTsconfig.json\""
   },
   "dependencies": {
+    "@panzoom/panzoom": "^4.4.4",
     "lodash": "^4.17.21",
     "nanoid": "^3.1.30",
     "react-json-view": "^1.21.3",

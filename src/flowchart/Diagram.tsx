@@ -18,6 +18,7 @@ import styled from "styled-components";
 import { nanoid } from "nanoid";
 import { getNodeRenderer } from "./utils";
 import { BottomCommands } from "./BottomCommands";
+import { EventBusContext } from "./eventBus";
 
 export const CanvasOuter = styled.div<any>`
   position: relative;
@@ -65,16 +66,10 @@ interface IDiagramProps {
 }
 
 export const Diagram = (props: IDiagramProps) => {
+  const bus = React.useContext(EventBusContext);
   const [canvasId] = React.useState<string>(nanoid(8));
   const chart = props.chart;
   const canvas = React.createRef<HTMLDivElement>();
-  const [panZoomData, setPanZoomData] = React.useState({
-    x: 0,
-    y: 0,
-    scale: 1,
-    minZoom: 0.1,
-    maxZoom: 2,
-  });
   const highlighted = props.highlighted || [];
 
   const onNodeDelete = (id: string) => {
@@ -138,10 +133,10 @@ export const Diagram = (props: IDiagramProps) => {
 
     const x =
       (e.clientX + canvas.current.scrollLeft - canvasRect.left) /
-      panZoomData.scale;
+      bus.getDiagramZoomScale().scale;
     const y =
       (e.clientY + canvas.current.scrollTop - canvasRect.top) /
-      panZoomData.scale;
+      bus.getDiagramZoomScale().scale;
 
     newNode.position = {
       x,
@@ -154,56 +149,10 @@ export const Diagram = (props: IDiagramProps) => {
     e.preventDefault();
   };
 
-  const onPanChange = (x: number, y: number) => {
-    setPanZoomData({
-      ...panZoomData,
-      x,
-      y,
-    });
-  };
-
-  const onZoomIn = (scale: number) => {
-    setPanZoomData({
-      ...panZoomData,
-      scale
-    });
-  };
-
-  const onZoomOut = (scale: number) => {
-    setPanZoomData({
-      ...panZoomData,
-      scale
-    });
-  };
-
-  const onZoomReset = (scale: number) => {
-    setPanZoomData({
-      ...panZoomData,
-      x: 0,
-      y: 0,
-      scale,
-    });
-  };
-
-  const onUndo = () => {
-    //onDiagramEvent("onUndo", {})
-  };
-
-  const onRedo = () => {
-    //onDiagramEvent("onUndo", {})
-  };
-
   return (
     <>
       <CanvasOuter className="flowDiagramCanvasOuter" autoCenter>
-        <ZoomLayer
-          width="100%"
-          height="100%"
-          x={panZoomData.x}
-          y={panZoomData.y}
-          zoom={panZoomData.scale}
-          onPan={onPanChange}
-        >
+        <ZoomLayer width="100%" height="100%">
           <AreaSelect
             onAreaSelectionChange={props.onAreaSelectionChange}
             nodes={props.chart.nodes}
@@ -224,18 +173,10 @@ export const Diagram = (props: IDiagramProps) => {
       </CanvasOuter>
       <BottomCommands
         sidebarOpened={props.sidebarOpened}
-        maxZoom={panZoomData.maxZoom}
-        minZoom={panZoomData.minZoom}
         chart={props.chart}
-        onRedo={onRedo}
-        onUndo={onUndo}
-        onZoomIn={onZoomIn}
-        onZoomOut={onZoomOut}
-        onZoomReset={onZoomReset}
         onDeleteNodes={props.onDeleteNodes}
         canRedo={props.canRedo}
         canUndo={props.canUndo}
-        panZoomInfo={panZoomData}
       />
     </>
   );

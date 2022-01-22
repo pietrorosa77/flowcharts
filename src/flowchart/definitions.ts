@@ -130,6 +130,8 @@ export type ChartEvents =
   | "evt-nodedrag"
   | "evt-connection"
   | "evt-highlightLink"
+  | "evt-togglepanzoom"
+  | "evt-resetpanzoom"
   | "evt-toggleSidebar";
 
 export interface IToggleSidebarEvent {
@@ -151,8 +153,12 @@ export interface IChartEventBus {
 
   emit: (type: ChartEvents, data: any) => void;
 
-  storeDiagramZoomScale: (scale: number) => void;
-  getDiagramZoomScale: () => number;
+  storeDiagramZoomScale: (panzomInfo: {
+    scale: number;
+    x: number;
+    y: number;
+  }) => void;
+  getDiagramZoomScale: () => { scale: number; x: number; y: number };
 }
 export type Actions =
   | "onDragNodeStop"

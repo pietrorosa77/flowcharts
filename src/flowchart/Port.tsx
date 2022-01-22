@@ -134,7 +134,7 @@ export const NodePort = React.memo(
 
       const canvas: any = document.getElementById(props.canvasId);
       const canvasRect = canvas.getBoundingClientRect();
-      const scale: number = bus.getDiagramZoomScale() || 1;
+      const scale: number = bus.getDiagramZoomScale().scale || 1;
 
       const _mouseMoveHandler = (e: MouseEvent) => {
         e.stopPropagation();

@@ -1,24 +1,15 @@
 import React from "react";
-import { ZoomIn, ZoomOut, View, Undo, Redo, Trash, Apps } from "grommet-icons";
-import { debounce } from "lodash";
-import { IChart, IPanZoomInfo, IToggleSidebarEvent } from "./definitions";
+import { View, Undo, Redo, Trash, Apps, Pan, Select } from "grommet-icons";
+import { IChart, IToggleSidebarEvent } from "./definitions";
 import { Box } from "grommet";
 import { EventBusContext } from "./eventBus";
 
 interface BottomCommandsProps {
   canUndo: boolean;
   canRedo: boolean;
-  maxZoom: number;
-  minZoom: number;
   chart: IChart;
   sidebarOpened?: boolean;
-  onZoomIn: (scale: number) => void;
-  onZoomOut: (scale: number) => void;
-  onZoomReset: (scale: number) => void;
-  onUndo: () => void;
-  onRedo: () => void;
   onDeleteNodes: (nodeIds: Array<string>) => void;
-  panZoomInfo: IPanZoomInfo;
 }
 
 const btnStyle: React.CSSProperties = {
@@ -28,28 +19,19 @@ const btnStyle: React.CSSProperties = {
 };
 export const BottomCommands = (props: BottomCommandsProps) => {
   const {
-    onZoomIn,
-    onZoomOut,
-    onZoomReset,
-    onUndo,
-    onRedo,
     onDeleteNodes: delNodes,
     chart,
-    minZoom,
-    maxZoom,
     canRedo,
     canUndo,
     sidebarOpened,
   } = props;
 
   const [opened, setOpened] = React.useState(sidebarOpened || false);
+  const [panZoomEnabled, setPanZoomEnabled] = React.useState(true);
   const bus = React.useContext(EventBusContext);
   const nodeSelected = Object.keys(chart.selected).filter(
     (k) => chart.selected[k]
   );
-  const panZoomInfo = props.panZoomInfo;
-  const debounceUndo = React.useRef(debounce(onUndo, 80)).current;
-  const debounceRedo = React.useRef(debounce(onRedo, 80)).current;
 
   React.useEffect(() => {
     const handler = bus.subscribe(
@@ -62,6 +44,11 @@ export const BottomCommands = (props: BottomCommandsProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  React.useEffect(() => {
+    bus.emit("evt-togglepanzoom", panZoomEnabled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panZoomEnabled]);
+
   const onDeleteNodes = () => {
     delNodes(nodeSelected);
   };
@@ -71,21 +58,8 @@ export const BottomCommands = (props: BottomCommandsProps) => {
     setOpened(!opened);
   };
 
-  const onZoomInInternal = () => {
-    const scale = panZoomInfo.scale + 0.2;
-    bus.storeDiagramZoomScale(scale);
-    onZoomIn(scale);
-  };
-
-  const onZoomOutInternal = () => {
-    const scale = panZoomInfo.scale - 0.1;
-    bus.storeDiagramZoomScale(scale);
-    onZoomOut(scale);
-  };
-
-  const onZoomResetInternal = () => {
-    bus.storeDiagramZoomScale(1);
-    onZoomReset(1);
+  const onZoomReset = () => {
+    bus.emit("evt-resetpanzoom", undefined);
   };
 
   return (
@@ -106,10 +80,9 @@ export const BottomCommands = (props: BottomCommandsProps) => {
         onClick={onToggleSidebar}
         className={`flowDiagramButtonBarAction${opened ? " on" : ""}`}
         role="button"
-        cursor="pointer"
         style={btnStyle}
       />
-      <View
+      {/* <View
         role="button"
         onClick={onZoomResetInternal}
         className={`flowDiagramButtonBarAction ${
@@ -117,7 +90,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
             ? "inactive"
             : "active"
         }`}
-        cursor="pointer"
+        
         style={btnStyle}
       />
       <ZoomIn
@@ -126,7 +99,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
         className={`flowDiagramButtonBarAction ${
           panZoomInfo.scale >= maxZoom ? "inactive" : "active"
         }`}
-        cursor="pointer"
+        
         style={btnStyle}
       />
 
@@ -138,37 +111,59 @@ export const BottomCommands = (props: BottomCommandsProps) => {
             ? "inactive"
             : "active"
         }`}
-        cursor="pointer"
+        
+        style={btnStyle}
+      /> */}
+
+      <Pan
+        role="button"
+        onClick={() => setPanZoomEnabled(true)}
+        className={`flowDiagramButtonBarAction ${
+          !panZoomEnabled ? "off" : "on"
+        }`}
+        style={btnStyle}
+      />
+
+      <Select
+        role="button"
+        onClick={() => setPanZoomEnabled(false)}
+        className={`flowDiagramButtonBarAction ${
+          panZoomEnabled ? "off" : "on"
+        }`}
+        style={btnStyle}
+      />
+
+      <View
+        role="button"
+        onClick={onZoomReset}
+        className={`flowDiagramButtonBarAction`}
         style={btnStyle}
       />
 
       <Undo
         role="button"
-        onClick={debounceUndo}
+        onClick={() => null}
         className={`flowDiagramButtonBarAction ${
           !canUndo ? "inactive" : "active"
         }`}
-        cursor="pointer"
         style={btnStyle}
       />
 
       <Redo
         role="button"
-        onClick={debounceRedo}
+        onClick={() => null}
         className={`flowDiagramButtonBarAction ${
           !canRedo ? "inactive" : "active"
         }`}
-        cursor="pointer"
         style={btnStyle}
       />
 
       <Trash
         role="button"
-        onClick={onDeleteNodes}
+        onClick={nodeSelected.length === 0 ? onDeleteNodes : undefined}
         className={`flowDiagramButtonBarAction ${
           nodeSelected.length === 0 ? "inactive" : "active"
         }`}
-        cursor="pointer"
         style={btnStyle}
       />
     </Box>
