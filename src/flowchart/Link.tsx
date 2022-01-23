@@ -103,7 +103,6 @@ export const Link = (props: ILinkProps) => {
   const bus = React.useContext(EventBusContext);
   const fromId = props.nodeFrom.id;
   const toId = props.nodeTo.id;
-  const fromSize = props.nodeFrom.size;
   const fromFromProps = props.nodeFrom.position;
   const toFromProps = props.nodeTo.position;
   const fromRef = React.useRef(fromFromProps);
@@ -113,6 +112,7 @@ export const Link = (props: ILinkProps) => {
   const markerEl = React.useRef<SVGPathElement>(null);
   const portIndex = props.nodeFrom.ports[props.portFrom].index;
 
+  // update svg path recalculating points
   const updateVisual = (
     height: number,
     fromPos: IPosition,
@@ -131,7 +131,11 @@ export const Link = (props: ILinkProps) => {
     lineEl.current?.setAttribute("d", points);
   };
 
+  // while nodes are being dragged this event will tell the node to update itself if the link belongs
+  // to one of the nodes being dragged
   React.useEffect(() => {
+    toRef.current = toFromProps;
+    fromRef.current = fromFromProps;
     const nodeMovingListener = (evt: any) => {
       const { id, position } = evt;
 
@@ -163,22 +167,7 @@ export const Link = (props: ILinkProps) => {
     };
   });
 
-  // React.useEffect(() => {
-  //   fromRef.current = fromFromProps;
-  // }, [fromFromProps]);
-
-  React.useEffect(() => {
-    toRef.current = toFromProps;
-    fromRef.current = fromFromProps;
-    updateVisual(
-      props.portHeight,
-      fromFromProps,
-      toFromProps,
-      portIndex,
-      fromSize
-    );
-  }, [toFromProps, fromFromProps, portIndex, fromSize, props.portHeight]);
-
+  // event used to highlight/turn off a specific link
   React.useEffect(() => {
     const handler = bus.subscribe(
       "evt-highlightLink",
@@ -200,14 +189,11 @@ export const Link = (props: ILinkProps) => {
 
   const { startPos, endPos } = calculatePosition(
     props.portHeight,
-    fromRef.current,
-    toRef.current,
+    props.nodeFrom.position,
+    props.nodeTo.position,
     portIndex,
     props.nodeFrom.size
   );
-
-  if (!startPos || !endPos) return null;
-
   // implement custom path functions here
   const points = defaultPath(startPos, endPos);
   return (

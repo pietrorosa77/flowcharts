@@ -44,6 +44,7 @@ export const CanvasInner = styled.div`
   background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
   outline: 1px dashed rgba(0, 0, 0, 0.1);
   position: relative;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.2);
   width: ${(props) => props.theme.diagram.canvasWidth || 2000}px;
   height: ${(props) => props.theme.diagram.canvasHeight || 2000}px;
 ` as any;

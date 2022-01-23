@@ -31,13 +31,13 @@ export function NodeDragger(props: INodeDraggerProps) {
     borderRadius: "12px",
     border: `2px solid ${theme.global.colors["light-1"]}`,
   });
-  const hatStyle = React.useRef<React.CSSProperties>({
+  const hatStyle: React.CSSProperties = {
     zIndex: 100,
     position: "absolute",
     cursor: "move",
     willChange: "transform, left, top",
     transform: `translate(${fromPropsPosition.x}px, ${fromPropsPosition.y}px)`,
-  });
+  };
 
   const hatRef = React.useRef<HTMLDivElement>();
   const borderRef = React.useRef<HTMLDivElement>();
@@ -51,18 +51,9 @@ export function NodeDragger(props: INodeDraggerProps) {
     borderRef.current = document.getElementById(`${nodeId}-borders`) as any;
   }, [nodeId]);
 
+  // Multidragging handler
   React.useEffect(() => {
     draggedPosition.current = fromPropsPosition;
-    updateVisuals(fromPropsPosition, false);
-    bus.emit("evt-nodedrag", {
-      shouldSkip: true,
-      id: nodeId,
-      position: fromPropsPosition,
-      multi: false,
-    });
-  }, [fromPropsPosition]);
-
-  React.useEffect(() => {
     const multidragMovingListener = (evt: IOnNodeDragEvent) => {
       if (evt.shouldSkip || nodeId === evt.id || !selected || !evt.multi) {
         return;
@@ -90,6 +81,7 @@ export function NodeDragger(props: INodeDraggerProps) {
     };
   });
 
+  // update node position with css translate to leverage graphic acceleration for performance
   const updateVisuals = (position: IPosition, dragging: boolean) => {
     if (!hatRef.current || !borderRef.current) {
       return;
@@ -177,7 +169,7 @@ export function NodeDragger(props: INodeDraggerProps) {
       e.preventDefault();
       e.stopPropagation();
       cancelAnimationFrame(raFrameHandle);
-      updateVisuals(draggedPosition.current, false);
+      //updateVisuals(draggedPosition.current, false);
       window.removeEventListener("pointerup", mouseUpHandler, false);
       window.removeEventListener("pointercancel", mouseUpHandler, false);
       window.removeEventListener("pointermove", throttledMove, true);
@@ -195,7 +187,7 @@ export function NodeDragger(props: INodeDraggerProps) {
       });
     };
 
-    updateVisuals(draggedPosition.current, true);
+    //updateVisuals(draggedPosition.current, true);
     window.addEventListener("pointerup", mouseUpHandler, false);
     window.addEventListener("pointercancel", mouseUpHandler, false);
     window.addEventListener("pointermove", throttledMove, {
@@ -214,7 +206,7 @@ export function NodeDragger(props: INodeDraggerProps) {
       key={`${node.id}-drag-hat`}
       id={`${node.id}-drag-hat`}
       onPointerDown={onMouseDown}
-      style={hatStyle.current}
+      style={hatStyle}
     >
       <div
         id={`${node.id}-borders`}
