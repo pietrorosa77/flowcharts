@@ -1,5 +1,5 @@
 import { deepMerge } from "grommet/utils";
-import { DebouncedFunc, isEqual, throttle } from "lodash";
+import { isEqual } from "lodash";
 import { IChart } from "./definitions";
 type UndoRedoState = {
   past: IChart[];
@@ -8,26 +8,12 @@ type UndoRedoState = {
 };
 export class UndoRedoManager {
   current: UndoRedoState;
-  throttledReducer: DebouncedFunc<
-    (
-      oldState: UndoRedoState,
-      action: {
-        type: "undo" | "redo" | "save" | "reset";
-        payload?: IChart | undefined;
-        merge?: boolean;
-      }
-    ) => UndoRedoState
-  >;
   constructor(initialState: IChart) {
     this.current = {
       past: [],
       present: initialState,
       future: [],
     };
-
-    this.throttledReducer = throttle(this.reducer, 200, {
-      trailing: true,
-    });
   }
 
   reducer = (

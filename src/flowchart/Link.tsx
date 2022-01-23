@@ -58,11 +58,11 @@ export const NewLink = (props: { portHeight: number; chart: IChart }) => {
   const nodeFrom = props.chart.nodes[connection.nodeFromId];
   const portIndex = nodeFrom.ports[connection.portFromId].index;
   const { startPos, endPos } = calculatePosition(
-    nodeFrom,
     props.portHeight,
     nodeFrom.position,
     connection.positionTo,
     portIndex,
+    nodeFrom.size,
     true
   );
   const points = defaultPath(startPos, endPos);
@@ -103,6 +103,7 @@ export const Link = (props: ILinkProps) => {
   const bus = React.useContext(EventBusContext);
   const fromId = props.nodeFrom.id;
   const toId = props.nodeTo.id;
+  const fromSize = props.nodeFrom.size;
   const fromFromProps = props.nodeFrom.position;
   const toFromProps = props.nodeTo.position;
   const fromRef = React.useRef(fromFromProps);
@@ -111,6 +112,24 @@ export const Link = (props: ILinkProps) => {
   const lineEl = React.useRef<SVGPathElement>(null);
   const markerEl = React.useRef<SVGPathElement>(null);
   const portIndex = props.nodeFrom.ports[props.portFrom].index;
+
+  const updateVisual = (
+    height: number,
+    fromPos: IPosition,
+    toPos: IPosition,
+    index: number,
+    size?: { w: number; h: number }
+  ) => {
+    const { startPos, endPos } = calculatePosition(
+      height,
+      fromPos,
+      toPos,
+      index,
+      size
+    );
+    const points = defaultPath(startPos, endPos);
+    lineEl.current?.setAttribute("d", points);
+  };
 
   React.useEffect(() => {
     const nodeMovingListener = (evt: any) => {
@@ -129,15 +148,13 @@ export const Link = (props: ILinkProps) => {
         toRef.current = position;
       }
 
-      const { startPos, endPos } = calculatePosition(
-        props.nodeFrom,
+      updateVisual(
         props.portHeight,
         fromRef.current,
         toRef.current,
-        portIndex
+        portIndex,
+        props.nodeFrom.size
       );
-      const points = defaultPath(startPos, endPos);
-      lineEl.current?.setAttribute("d", points);
     };
 
     const mHandler = bus.subscribe("evt-nodedrag", nodeMovingListener);
@@ -146,13 +163,21 @@ export const Link = (props: ILinkProps) => {
     };
   });
 
-  React.useEffect(() => {
-    fromRef.current = fromFromProps;
-  }, [fromFromProps]);
+  // React.useEffect(() => {
+  //   fromRef.current = fromFromProps;
+  // }, [fromFromProps]);
 
   React.useEffect(() => {
     toRef.current = toFromProps;
-  }, [toFromProps]);
+    fromRef.current = fromFromProps;
+    updateVisual(
+      props.portHeight,
+      fromFromProps,
+      toFromProps,
+      portIndex,
+      fromSize
+    );
+  }, [toFromProps, fromFromProps, portIndex, fromSize, props.portHeight]);
 
   React.useEffect(() => {
     const handler = bus.subscribe(
@@ -174,11 +199,11 @@ export const Link = (props: ILinkProps) => {
   }, []);
 
   const { startPos, endPos } = calculatePosition(
-    props.nodeFrom,
     props.portHeight,
     fromRef.current,
     toRef.current,
-    portIndex
+    portIndex,
+    props.nodeFrom.size
   );
 
   if (!startPos || !endPos) return null;
@@ -219,19 +244,19 @@ export const Link = (props: ILinkProps) => {
 };
 
 export function calculatePosition(
-  nodeFrom: INode,
   portHeight: number,
   from: IPosition,
   to: IPosition,
   portIndex: number,
+  fromSize?: { h: number; w: number },
   creating?: boolean
 ) {
   const offsetY = (portHeight - 2) / 2;
   const startPos = {
-    x: from.x + (nodeFrom.size ? nodeFrom.size.w : 0),
+    x: from.x + (fromSize ? fromSize.w : 0),
     y:
       from.y +
-      (nodeFrom.size ? nodeFrom.size.h : 0) -
+      (fromSize ? fromSize.h : 0) -
       (portIndex || 1) * portHeight +
       offsetY,
   };

@@ -59,13 +59,13 @@ export interface IConfig {
   [key: string]: any;
 }
 
-export interface IPanZoomInfo {
-  x: number;
-  y: number;
-  scale: number;
-  minZoom: number;
-  maxZoom: number;
-}
+// export interface IPanZoomInfo {
+//   x: number;
+//   y: number;
+//   scale: number;
+//   minZoom: number;
+//   maxZoom: number;
+// }
 
 export interface IOnDragNodeStopEvent {
   position: IPosition;

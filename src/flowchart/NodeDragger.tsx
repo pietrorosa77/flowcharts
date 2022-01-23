@@ -46,13 +46,20 @@ export function NodeDragger(props: INodeDraggerProps) {
   const nodeId = node.id;
   const selected = props.selected;
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     hatRef.current = document.getElementById(`${nodeId}-drag-hat`) as any;
     borderRef.current = document.getElementById(`${nodeId}-borders`) as any;
   }, [nodeId]);
 
   React.useEffect(() => {
     draggedPosition.current = fromPropsPosition;
+    updateVisuals(fromPropsPosition, false);
+    bus.emit("evt-nodedrag", {
+      shouldSkip: true,
+      id: nodeId,
+      position: fromPropsPosition,
+      multi: false,
+    });
   }, [fromPropsPosition]);
 
   React.useEffect(() => {

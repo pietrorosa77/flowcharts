@@ -35,7 +35,6 @@ export const CanvasOuter = styled.div<any>`
 ` as any;
 
 export const CanvasInner = styled.div`
-
   background-image: ${(props) => `
   linear-gradient(${props.theme.global.colors.canvasGridSquare} 2px, transparent 2px), 
   linear-gradient(90deg, ${props.theme.global.colors.canvasGridSquare} 2px, transparent 2px), 
@@ -75,7 +74,7 @@ export const Diagram = (props: IDiagramProps) => {
     props.middlewares,
     bus
   );
-  const chart= appState.chart;
+  const chart = appState.chart;
 
   const onDiagramEvent = (type: Actions, payload: DiagramEventArgs) => {
     dispatch({ type, payload });
@@ -94,8 +93,10 @@ export const Diagram = (props: IDiagramProps) => {
   const onNodeSelectionChanged = (evt: IOnNodeSelectionChanged) =>
     onDiagramEvent("onNodeSelectionChanged", evt);
 
-  const onNodeSizeChanged = (evt: ResizeObserverEntry[]) =>
+  const onNodeSizeChanged = (evt: ResizeObserverEntry[]) => {
+    console.log("ygygyg", evt);
     onDiagramEvent("onNodeSizeChanged", evt);
+  };
 
   const onEndConnection = (evt: IOnEndConnection) =>
     onDiagramEvent("onEndConnection", evt);
@@ -107,24 +108,22 @@ export const Diagram = (props: IDiagramProps) => {
 
   const onNodeAdded = (evt: INode) => onDiagramEvent("onNodeAdded", evt);
 
+  const onUndo = () => onDiagramEvent("onUndo", undefined);
+
+  const onRedo = () => onDiagramEvent("onRedo", undefined);
+
   const onNodeSettings = (evt: INode | undefined) => {
     bus.emit("evt-nodesettings", cloneDeep(evt));
-  }
+  };
 
   React.useEffect(() => {
-    const unsub = bus.subscribe(
-      "evt-nodessizechanged",
-      onNodeSizeChanged
-    );
-    const nodeUpdt = bus.subscribe(
-      "evt-nodeupdated",
-      onNodeUpdated
-    );
+    const unsub = bus.subscribe("evt-nodessizechanged", onNodeSizeChanged);
+    const nodeUpdt = bus.subscribe("evt-nodeupdated", onNodeUpdated);
     return () => {
       bus.unSubscribe("evt-nodessizechanged", unsub);
       bus.unSubscribe("evt-nodeupdated", nodeUpdt);
     };
-     // eslint-disable-next-line
+    // eslint-disable-next-line
   }, []);
 
   const onNodeDelete = (id: string) => {
@@ -227,6 +226,8 @@ export const Diagram = (props: IDiagramProps) => {
         onDeleteNodes={onDeleteNodes}
         canRedo={appState.canRedo}
         canUndo={appState.canUndo}
+        onRedo={onRedo}
+        onUndo={onUndo}
       />
     </>
   );

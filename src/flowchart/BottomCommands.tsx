@@ -7,6 +7,8 @@ import { EventBusContext } from "./eventBus";
 interface BottomCommandsProps {
   canUndo: boolean;
   canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
   chart: IChart;
   sidebarOpened?: boolean;
   onDeleteNodes: (nodeIds: Array<string>) => void;
@@ -60,6 +62,18 @@ export const BottomCommands = (props: BottomCommandsProps) => {
 
   const onZoomReset = () => {
     bus.emit("evt-resetpanzoom", undefined);
+  };
+
+  const onUndo = () => {
+    if (props.canUndo) {
+      props.onUndo();
+    }
+  };
+
+  const onRedo = () => {
+    if (props.canRedo) {
+      props.onRedo();
+    }
   };
 
   return (
@@ -142,7 +156,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
 
       <Undo
         role="button"
-        onClick={() => null}
+        onClick={onUndo}
         className={`flowDiagramButtonBarAction ${
           !canUndo ? "inactive" : "active"
         }`}
@@ -151,7 +165,7 @@ export const BottomCommands = (props: BottomCommandsProps) => {
 
       <Redo
         role="button"
-        onClick={() => null}
+        onClick={onRedo}
         className={`flowDiagramButtonBarAction ${
           !canRedo ? "inactive" : "active"
         }`}

@@ -129,8 +129,10 @@ export const createReducer = () => {
         ret = state.chart;
         break;
     }
-
     history.save(ret, action.type);
+    // if (!["onRedo", "onRedo"].includes(action.type)) {
+    //   history.save(ret, action.type);
+    // }
 
     return {
       name,
@@ -197,7 +199,6 @@ export const onNodeSizeChanged = (
   chart: IChart,
   evt: ResizeObserverEntry[]
 ): IChart => {
-
   const nodes = evt.reduce((acc, c) => {
     const nodeId = c.target.getAttribute("data-node-id") as string;
     const node = chart.nodes[nodeId];
